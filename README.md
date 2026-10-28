@@ -1,15 +1,15 @@
 <div align="center">
 
-<img src="icon-192.png" width="96" alt="Ícone do Diário de Lore">
+<img src="icon-192.png" width="96" alt="Ícone do Side Quest">
 
-# Diário de Lore
+# Side Quest
 
-**Contador de lore e diário de partidas de Disney Lorcana.**
+**Contador e diário de partidas de card game.** Por enquanto, de Disney Lorcana.
 Registre eventos, partidas e prêmios, e descubra contra quais decks você vai bem ou mal.
 
-Funciona sem internet e fica instalado no celular como um app.
+Funciona sem internet e fica instalado no celular como um app. · Versão 1.0
 
-**[Abrir o app](https://github.com/yas-cm/tcg_app)**
+**[Abrir o app](https://SEU-USUARIO.github.io/side-quest/)**
 
 </div>
 
@@ -51,7 +51,7 @@ Funciona sem internet e fica instalado no celular como um app.
 
 ## Instalar no celular (Android)
 
-1. Abra o [endereço do app](https://github.com/yas-cm/tcg_app) no Chrome.
+1. Abra o [endereço do app](https://SEU-USUARIO.github.io/side-quest/) no Chrome.
 2. Toque no menu ⋮ → **Instalar app** (ou **Adicionar à tela inicial**).
 3. Abra uma vez pelo ícone. Depois disso ele funciona sem internet.
 
@@ -71,6 +71,10 @@ Um único arquivo HTML, com CSS e JavaScript puros, sem frameworks e sem servido
 | `sw.js` | Guarda o app para funcionar sem internet |
 | `manifest.webmanifest` | Nome, cores e ícones para instalar no celular |
 | `icon-*.png` | Ícones do app |
+
+## Versões
+
+- **1.0** (28/10/2026): primeira versão. Contador de lore, eventos, registro rápido, decklists, estatísticas, exportação e backup.
 
 ## Aviso
 

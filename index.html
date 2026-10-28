@@ -7,7 +7,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head><body>
-<title>Diário de Lore</title>
+<title>Side Quest</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -126,6 +126,7 @@ textarea.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-s
 .card .tile{background:var(--bg)}
 .tile b{display:block;font-family:var(--font-display);font-size:1.55rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 .tile span{font-size:.78rem;color:var(--muted)}
+.tile b.money,.nw{white-space:nowrap}
 .bar{height:6px;border-radius:2px;background:var(--soft);overflow:hidden}
 .card .bar{background:var(--line)}
 .bar i{display:block;height:100%;background:var(--primary)}
@@ -211,6 +212,30 @@ textarea.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-s
 .tagcount{display:inline-flex;gap:6px;align-items:center;font-size:.85rem;padding:4px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
 .tagcount b{font-family:var(--font-display)}
 .vs-box{border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--r);padding:10px 12px;background:var(--bg);font-size:.9rem;display:flex;flex-direction:column;gap:4px}
+/* v1.0 */
+.tabs button .dot{position:absolute;top:9px;left:calc(50% + 7px);width:10px;height:10px;border-radius:50%;background:var(--loss);box-shadow:0 0 0 2px var(--surface)}
+.swq-row{display:flex;flex-wrap:wrap;gap:10px}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.filters>*{min-width:0}
+@media (max-width:420px){.filters{grid-template-columns:1fr}}
+.swq{width:44px;height:44px;border-radius:var(--r);border:1px solid var(--line);padding:0}
+.swq[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--primary)}
+.srow{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit;font:inherit}
+.srow:first-child{border-top:0}
+button.srow{cursor:pointer}
+.srow-top{display:flex;align-items:center;gap:10px;min-width:0}
+.srow-t{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere;line-height:1.3}
+.srow-p{font-family:var(--font-display);font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.srow-c{color:var(--muted);font-size:1.2rem;line-height:1}
+.srow-sub{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;font-size:.84rem;color:var(--muted);line-height:1.4}
+.srow-sub>span{min-width:0;overflow-wrap:anywhere}
+.srow .bar{display:block}
+.evo-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--muted)}
+.evo-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.addtag{display:flex;gap:8px}
+.addtag input{flex:1;min-width:0}
+.exp-row{display:flex;gap:8px;flex-wrap:wrap}
+.exp-row select{flex:1 1 200px;min-width:0}
 @media (max-width:400px){.inkpick{grid-template-columns:repeat(3,minmax(0,1fr))}.twin{grid-template-columns:1fr}.tile{padding:10px}.tile b{font-size:1.35rem}}
 @media (max-width:340px){.tiles{grid-template-columns:1fr 1fr}}
 @media (max-height:640px){.lore-btn{height:64px}.lore{font-size:4.2rem}.quick button{min-height:38px}}
@@ -231,7 +256,9 @@ const PRIZE_TYPES=[{id:'dinheiro',name:'Dinheiro',real:true},{id:'credito',name:
 const TAGS=['Erro de jogada','Mulligan ruim','Faltou tinta','Tinta demais','Carta fraca','Ideia de troca','Matchup difícil','Sorte / azar'];
 const THEMES=[{id:'floresta',name:'Floresta',sw:'#24654A'},{id:'fliperama',name:'Fliperama',sw:'#3D35A8'},{id:'oceano',name:'Oceano',sw:'#0E6A8C'},{id:'escuro',name:'Escuro',sw:'#131319'}];
 const LORE_GOAL=20;
-const LS_DATA='diario-lore-data-v1',LS_PENDING='diario-lore-pending-v1',LS_LIVE='diario-lore-live-v1',LS_STATS='diario-lore-statsf-v1',LS_THEME='diario-lore-theme-v1',LS_BACKUP='diario-lore-backup-v1';
+const APP_VERSION='1.0';
+const STANDALONE=!(window.claude&&window.claude.use);
+const LS_DATA='diario-lore-data-v1',LS_PENDING='diario-lore-pending-v1',LS_LIVE='diario-lore-live-v1',LS_STATS='diario-lore-statsf-v1',LS_THEME='diario-lore-theme-v1',LS_BACKUP='diario-lore-backup-v1',LS_DIRTY='diario-lore-dirty-v1';
 
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function lsSet(k,v){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
@@ -315,8 +342,9 @@ const activeDecks=()=>decks().filter(d=>!d.archived);
 
 /* ---------- storage ---------- */
 function persistLocal(){const o={};S.docs.forEach((d,id)=>o[id]=d);lsSet(LS_DATA,o);lsSet(LS_PENDING,S.pending)}
-function write(id,obj){const d=Object.assign({},obj);delete d.id;S.docs.set(id,d);S.pending[id]={op:'set',data:d};persistLocal();flush()}
-function remove(id){S.docs.delete(id);S.pending[id]={op:'del'};persistLocal();flush()}
+function markDirty(){lsSet(LS_DIRTY,Date.now())}
+function write(id,obj){markDirty();const d=Object.assign({},obj);delete d.id;S.docs.set(id,d);S.pending[id]={op:'set',data:d};persistLocal();flush()}
+function remove(id){markDirty();S.docs.delete(id);S.pending[id]={op:'del'};persistLocal();flush()}
 async function flush(){
   if(!S.col||S.flushing)return;S.flushing=true;
   try{
@@ -395,21 +423,21 @@ const IC={
 /* ---------- shell ---------- */
 function statusHTML(){
   const n=Object.keys(S.pending).length;
-  if(S.mode==='connecting')return'<span class="status" id="status">Conectando…</span>';
+  if(STANDALONE||S.mode==='connecting')return'<span id="status"></span>';
   if(S.mode==='local')return(window.claude&&window.claude.use)?'<span class="status warn" id="status" title="Os dados ficam só neste navegador. Faça backup em Ajustes.">Só neste aparelho</span>':'<span class="status" id="status" title="Seus dados ficam guardados neste celular. Faça backup em Ajustes.">No celular</span>';
   if(S.syncErr)return`<span class="status warn" id="status" title="${esc(S.syncErr)}">${n} para salvar</span>`;
-  return`<span class="status" id="status">${n?'Salvando…':'Salvo'}</span>`;
+  return'<span id="status"></span>';
 }
 function renderStatus(){const el=document.getElementById('status');if(el)el.outerHTML=statusHTML()}
 function swatchesHTML(){
   const auto=`<button data-act="theme" data-v="" aria-pressed="${!S.theme}" aria-label="Tema automático" title="Automático (segue o aparelho)"><span style="background:linear-gradient(135deg,#3D35A8 50%,#131319 50%)"></span></button>`;
   return`<div class="swatches" role="group" aria-label="Tema">${auto}${THEMES.map(t=>`<button data-act="theme" data-v="${t.id}" aria-pressed="${S.theme===t.id}" aria-label="Tema ${t.name}" title="${t.name}"><span style="background:${t.sw}"></span></button>`).join('')}</div>`;
 }
-function bannerMain(){return`<header class="banner"><div class="banner-in"><div class="brand">${IC.logo}<div class="bt"><b>Diário de Lore</b><span>Suas partidas de Lorcana</span></div></div><div class="bright">${statusHTML()}</div></div></header>`}
+function bannerMain(){return`<header class="banner"><div class="banner-in"><div class="brand">${IC.logo}<div class="bt"><b>Side Quest</b></div></div><div class="bright">${statusHTML()}</div></div></header>`}
 function bannerSub(title,backTo,eyebrow){return`<header class="banner"><div class="banner-in"><button class="back" data-act="go" data-v="${backTo}">${IC.back}Voltar</button>${statusHTML()}</div>${title?`<div class="banner-title">${eyebrow?`<span class="eyebrow">${eyebrow}</span>`:''}<h1>${title}</h1></div>`:''}</header>`}
 function tabsHTML(){
   const cur={home:'home',newEvent:'home',newCasual:'home',closeEvent:'home',history:'history',event:'history',eventEdit:'history',match:'history',stats:'stats',decks:'decks',deckEdit:'decks',deck:'decks',settings:'settings',matchup:'stats'}[S.view]||'home';
-  const b=(id,label,ic)=>`<button data-act="go" data-v="${id}" ${cur===id?'aria-current="page"':''}>${IC[ic]}<span>${label}</span></button>`;
+  const nb=needsBackup();const b=(id,label,ic)=>`<button data-act="go" data-v="${id}" ${cur===id?'aria-current="page"':''} ${id==='settings'&&nb?'aria-label="Ajustes, backup pendente"':''}>${IC[ic]}${id==='settings'&&nb?'<i class="dot" aria-hidden="true"></i>':''}<span>${label}</span></button>`;
   return`<div class="tabs"><nav aria-label="Seções">${b('home','Início','home')}${b('history','Histórico','hist')}${b('stats','Estatísticas','stats')}${b('decks','Decks','decks')}${b('settings','Ajustes','settings')}</nav></div>`;
 }
 
@@ -433,7 +461,6 @@ function vHome(){
     h+=`<div class="stack"><button class="btn gold big" data-act="newEvent">Começar evento</button><button class="btn wide" data-act="newCasual">Partida avulsa</button></div>`;
   }
   const ms=matches();
-  if(S.mode==='local'&&ms.length&&!L){const i=backupInfo();if(i.changed&&(!i.b||i.days>=7))h+=`<div class="vs-box"><span><b>${i.b?'Faz '+i.days+' dias desde o último backup.':'Você ainda não fez backup.'}</b> Seus dados ficam só neste celular.</span><div class="row"><button class="btn small" data-act="export">Exportar backup agora</button></div></div>`}
   if(!ms.length&&!ev&&!L){
     h+=`<div class="card empty"><h2>Seu diário começa no próximo evento</h2><ol><li>Comece o evento antes de jogar: deck, formato e inscrição.</li><li>Jogue com o contador; ao chegar a ${LORE_GOAL} de lore o resultado entra sozinho. Ou registre só o resultado.</li><li>Marque as cores do oponente e siga para a próxima rodada.</li></ol></div>`;
   }else if(ms.length){
@@ -441,7 +468,7 @@ function vHome(){
     const last=ms.slice(-10).reverse();
     const ev30=events().filter(e=>(e.date||'')>=cut);let bal=0;ev30.forEach(e=>{bal+=prizeTotals(e).real-num(e.fee)});
     h+=`<div class="card"><div class="row between"><h3>Últimos 30 dias</h3><button class="link small" data-act="go" data-v="stats">Estatísticas</button></div>
-      <div class="tiles"><div class="tile"><b>${r.n}</b><span>partidas</span></div><div class="tile"><b>${r.n?pct(r.w,r.n)+'%':'–'}</b><span>vitórias (${recStr(r)})</span></div><div class="tile"><b class="${bal>=0?'pos':'neg'}" style="font-size:1.1rem;padding-top:6px">${brl(bal)}</b><span>saldo em dinheiro</span></div></div>
+      <div class="tiles"><div class="tile"><b>${r.n}</b><span>partidas</span></div><div class="tile"><b>${r.n?pct(r.w,r.n)+'%':'–'}</b><span>vitórias (<span class="nw">${recStr(r)}</span>)</span></div><div class="tile"><b class="money ${bal>=0?'pos':'neg'}" style="font-size:1.05rem;padding-top:6px">${brl(bal)}</b><span>saldo em dinheiro</span></div></div>
       <div><p class="small muted" style="margin-bottom:6px">Últimas partidas</p><div class="games">${last.map(m=>resBadge(m.result)).join('')}</div></div></div>`;
   }
   return bannerMain()+`<main class="app">${h}</main>`;
@@ -516,7 +543,6 @@ function vCounter(){
      ${L.games.length?`<p class="small muted">Quem perdeu o jogo anterior escolhe.${loser?` Quem perdeu: <b>${loser==='me'?'você':'o oponente'}</b>.`:''}</p>`:''}
      <button class="btn ${loser==='me'?'gold':''} big" data-act="first" data-v="me">Eu começo</button>
      <button class="btn ${loser==='opp'?'gold':''} big" data-act="first" data-v="opp">Oponente começa</button>
-     ${L.games.length?'':'<button class="btn wide" data-act="coin">Sortear</button>'}
      <button class="link small" data-act="sheet" data-v="end" style="align-self:center">Mais opções</button></div></div>`;
   }
   if(L.phase==='gameover'&&L.end){
@@ -541,6 +567,8 @@ function vCounter(){
   return h+'</div>';
 }
 
+function allTags(cur){const extra=new Set();matches().forEach(m=>(m.tags||[]).forEach(t=>{if(!TAGS.includes(t))extra.add(t)}));(cur||[]).forEach(t=>{if(!TAGS.includes(t))extra.add(t)});return TAGS.concat([...extra])}
+function knownPlayers(){const c={};matches().forEach(m=>{if(m.oppPlayer)c[m.oppPlayer]=(c[m.oppPlayer]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(x=>x[0])}
 function knownOpps(){
   const by={};const cur=S.view==='match'?S.sel:null;
   matches().forEach(m=>{if(!m.oppName||m.id===cur)return;const k=m.oppName.trim().toLowerCase();const e=by[k]=by[k]||{name:m.oppName.trim(),n:0,keys:{},last:''};e.n++;const ik=inkKey(m.oppInks);if(ik)e.keys[ik]=(e.keys[ik]||0)+1;if((m.date||'')>=e.last){e.last=m.date||'';e.name=m.oppName.trim()}});
@@ -553,7 +581,9 @@ function matchFormHTML(withResult){
   let sugg=key?known.filter(k=>inkKey(k.inks)===key):known;sugg=sugg.slice(0,8);
   if(f.oppName&&!sugg.some(k=>k.name===f.oppName)){const cur=known.find(k=>k.name===f.oppName);if(cur)sugg=[cur,...sugg].slice(0,8)}
   const allNames=known.map(k=>k.name);
-  return`<div class="card"><h3>Deck do oponente</h3>
+  const players=knownPlayers();
+  return`<div class="card"><label class="f">Nome do oponente<span class="hint">Opcional.</span><input type="text" id="m-oppplayer" data-f="oppPlayer" list="opp-players" value="${esc(f.oppPlayer||'')}" placeholder="Nome ou nick" autocomplete="off"></label><datalist id="opp-players">${players.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+   <div class="card"><h3>Deck do oponente</h3>
     ${sugg.length?`<div class="f"><span>${key?'Decks com essas cores que você já enfrentou':'Decks que você já enfrentou'}</span><div class="seg">${sugg.map(k=>`<button type="button" class="chip sugg" data-act="pickOpp" data-v="${esc(k.name)}" aria-pressed="${f.oppName===k.name}">${inksHTML(k.inks)}${esc(k.name)}</button>`).join('')}</div></div>`:''}
     <div class="f"><span>${sugg.length?'Ou toque nas cores (até 2)':'Toque nas cores (até 2)'}</span>${inkPicker('oppInks',f.oppInks)}</div>
     <label class="f">Apelido do deck<span class="hint">Opcional. Se for um deck que você já registrou, as cores são preenchidas sozinhas.</span><input type="text" id="m-oppname" data-f="oppName" list="opp-names" value="${esc(f.oppName)}" placeholder="Ex.: Steel Songs"></label>
@@ -561,7 +591,8 @@ function matchFormHTML(withResult){
     ${vsBox(key)}
    </div>
    ${withResult===false?'':`<div class="card"><h3>Resultado da partida</h3>${segHTML('result',[{id:'win',name:'Vitória'},{id:'loss',name:'Derrota'},{id:'draw',name:'Empate'}])}</div>`}
-   <div class="card"><h3>Notas</h3><div class="seg">${TAGS.map(t=>`<button type="button" class="chip" data-act="toggleTag" data-v="${esc(t)}" aria-pressed="${(f.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
+   <div class="card"><h3>Notas</h3><div class="seg">${allTags(f.tags).map(t=>`<button type="button" class="chip" data-act="toggleTag" data-v="${esc(t)}" aria-pressed="${(f.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
+    <div class="addtag"><input type="text" id="m-newtag" data-f="newTag" value="${esc(f.newTag||'')}" placeholder="Nova etiqueta" maxlength="40" aria-label="Nova etiqueta"><button type="button" class="btn small" data-act="addTag">Adicionar</button></div>
     <label class="f">O que aprendeu<textarea id="m-notes" data-f="notes" placeholder="Erros, cartas para trocar, como o oponente jogou…">${esc(f.notes)}</textarea></label></div>`;
 }
 function gamesHTML(games){return`<div class="games">${(games||[]).map((g,i)=>`<span class="gchip">J${i+1}: ${g.winner==='me'?'V':g.winner==='opp'?'D':'E'}${g.me!=null&&g.opp!=null&&g.how!=='manual'?` ${g.me}–${g.opp}`:''}${g.first==='me'?' · você começou':g.first==='opp'?' · oponente começou':''}</span>`).join('')}</div>`}
@@ -657,7 +688,7 @@ function vHistory(){
   if(cas.length){h+='<div class="card"><h3>Partidas avulsas</h3><div class="list">';cas.forEach(m=>{h+=matchItem(m)});h+='</div></div>'}
   return bannerMain()+`<main class="app">${h}</main>`;
 }
-function matchItem(m){return`<button class="item" data-act="openMatch" data-v="${m.id}">${resBadge(m.result)}<span class="grow"><span class="t">${m.round?'R'+m.round+' · ':''}${esc(m.oppName||inkNames(m.oppInks))}</span><br><span class="small muted">${fmtDate(m.date)} · ${esc(deckName(m.deckId))}${m.notes||(m.tags&&m.tags.length)?' · tem notas':''}</span></span>${inksHTML(m.oppInks)}</button>`}
+function matchItem(m){return`<button class="item" data-act="openMatch" data-v="${m.id}">${resBadge(m.result)}<span class="grow"><span class="t">${m.round?'R'+m.round+' · ':''}${esc(m.oppName||inkNames(m.oppInks))}</span><br><span class="small muted">${m.oppPlayer?'vs '+esc(m.oppPlayer)+' · ':''}${fmtDate(m.date)} · ${esc(deckName(m.deckId))}${m.notes||(m.tags&&m.tags.length)?' · tem notas':''}</span></span>${inksHTML(m.oppInks)}</button>`}
 function vEvent(){
   const ev=getDoc(S.sel);if(!ev){S.view='history';return vHistory()}
   const ms=eventMatches(ev.id),r=record(ms),d=getDoc(ev.deckId),pz=prizeTotals(ev);
@@ -717,26 +748,29 @@ function vsBox(key){
   const r=record(ms);const noted=ms.filter(m=>m.notes||(m.tags&&m.tags.length)).slice(-2).reverse();
   return`<div class="vs-box"><span><b>Seu histórico contra ${esc(inkNames(key.split('+')))}:</b> <span class="num">${recStr(r)}</span> · ${pct(r.w,r.n)}%</span>${noted.map(m=>`<span class="small"><span class="muted">${fmtDate(m.date)}:</span> ${esc([...(m.tags||[])].join(' · '))}${m.tags&&m.tags.length&&m.notes?' — ':''}${esc(m.notes||'')}</span>`).join('')}</div>`;
 }
+function srow(o){const tag=o.act?'button':'div';const attrs=o.act?` data-act="${o.act}" data-v="${esc(o.v)}"`:'';
+  return`<${tag} class="srow"${attrs}><span class="srow-top">${o.icon||''}<span class="srow-t">${o.title}</span><span class="srow-p">${o.n?pct(o.r.w,o.r.n)+'%':'–'}</span>${o.act?'<span class="srow-c" aria-hidden="true">›</span>':''}</span><span class="srow-sub">${(o.sub||[]).filter(Boolean).map(x=>`<span>${x}</span>`).join('')}${o.n!=null&&o.n<5?'<span class="flag" style="margin-left:0">poucos jogos</span>':''}</span><span class="bar"><i style="width:${o.n?pct(o.r.w,o.r.n):0}%"></i></span></${tag}>`}
 function evoCard(ms){
   if(ms.length<3)return`<div class="card"><h3>Evolução</h3><p class="small muted">O gráfico aparece a partir de 3 partidas.</p></div>`;
   const N=10;const pts=ms.map((m,i)=>{const win=ms.slice(Math.max(0,i-N+1),i+1);return{y:pct(win.filter(x=>x.result==='win').length,win.length),d:m.date,n:win.length,r:m.result}});
-  const W=600,H=220,L=40,R=16,T=14,B=30,iw=W-L-R,ih=H-T-B;
-  const X=i=>L+(pts.length===1?iw/2:i*iw/(pts.length-1)),Y=v=>T+ih-v/100*ih;
+  const W=340,H=170,L=34,R=10,T=10,B=12,iw=W-L-R,ih=H-T-B;
+  const X=i=>L+i*iw/(pts.length-1),Y=v=>T+ih-v/100*ih;
   const line=pts.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(p.y).toFixed(1)}`).join('');
   const area=line+`L${X(pts.length-1).toFixed(1)} ${Y(0)}L${X(0).toFixed(1)} ${Y(0)}Z`;
-  const last=pts[pts.length-1];
-  const grid=[0,50,100].map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1" ${v===50?'stroke-dasharray="4 4"':''}/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`).join('');
-  const dots=pts.map((p,i)=>`<rect x="${X(i)-2.5}" y="${H-B+8}" width="5" height="5" rx="1" fill="var(--${p.r==='win'?'win':p.r==='loss'?'loss':'draw'})"/>`).join('');
-  const data=esc(JSON.stringify(pts.map((p,i)=>({x:+(X(i)/W*100).toFixed(2),y:+(Y(p.y)/H*100).toFixed(2),t:`${fmtDate(p.d)} · ${p.y}% nas últimas ${p.n}`}))));
-  return`<div class="card"><div class="row between"><h3>Evolução</h3><span class="small muted">vitórias nas últimas ${N} partidas</span></div>
+  const last=pts[pts.length-1];const showDots=pts.length<=40;
+  const grid=[0,50,100].map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1" ${v===50?'stroke-dasharray="4 4"':''}/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`).join('');
+  const col=r=>`var(--${r==='win'?'win':r==='loss'?'loss':'draw'})`;
+  const dots=showDots?pts.map((p,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="4" fill="${col(p.r)}" stroke="var(--surface)" stroke-width="1.5"/>`).join(''):`<circle cx="${X(pts.length-1)}" cy="${Y(last.y)}" r="4.5" fill="var(--primary)" stroke="var(--surface)" stroke-width="1.5"/>`;
+  const data=esc(JSON.stringify(pts.map((p,i)=>({x:+(X(i)/W*100).toFixed(2),y:+(Y(p.y)/H*100).toFixed(2),t:`${fmtDate(p.d)} · ${{win:'vitória',loss:'derrota',draw:'empate'}[p.r]||''} · ${p.y}% nas últimas ${p.n}`}))));
+  return`<div class="card"><div class="row between"><h3>Evolução</h3><span class="small muted">Agora: <b style="color:var(--fg)">${last.y}%</b></span></div>
+   <p class="small muted" style="margin-top:-6px">Vitórias nas últimas ${N} partidas, partida a partida.</p>
    <div class="evo" data-pts="${data}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Taxa de vitória nas últimas ${N} partidas, agora em ${last.y}%">
     ${grid}<path d="${area}" fill="var(--primary)" fill-opacity=".08"/><path d="${line}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${X(pts.length-1)}" cy="${Y(last.y)}" r="5" fill="var(--primary)" stroke="var(--surface)" stroke-width="2"/>
     ${dots}
-    <line class="evo-x" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><circle class="evo-dot" r="5" fill="var(--primary)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>
+    <line class="evo-x" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><circle class="evo-dot" r="6" fill="none" stroke="var(--fg)" stroke-width="1.5" visibility="hidden"/>
     <rect x="${L}" y="0" width="${iw}" height="${H}" fill="transparent"/></svg><div class="evo-tip" hidden></div></div>
-   <div class="row between small muted"><span>${fmtDate(pts[0].d)}</span><span>Agora: <b style="color:var(--fg)">${last.y}%</b></span><span>${fmtDate(last.d)}</span></div>
-   <p class="hint">Cada quadradinho embaixo é uma partida: verde vitória, vermelho derrota, cinza empate. A linha tracejada marca 50%.</p></div>`;
+   <div class="row between small muted"><span>${fmtDate(pts[0].d)}</span><span>${fmtDate(last.d)}</span></div>
+   ${showDots?`<div class="evo-legend"><span><i style="background:var(--win)"></i>Vitória</span><span><i style="background:var(--loss)"></i>Derrota</span><span><i style="background:var(--draw)"></i>Empate</span><span>– – 50%</span></div>`:''}</div>`;
 }
 function matrixCard(D){
   if(D.F.deck!=='all')return'';
@@ -762,10 +796,10 @@ function vMatchup(){
   let h=`<div class="card"><div class="row">${inksHTML(x.inks)}<span class="small muted">${esc(periodLabel(D.F))}</span></div>
    ${Object.keys(nicks).length?`<p class="small"><span class="muted">Apelidos usados:</span> ${Object.entries(nicks).sort((a,b)=>b[1]-a[1]).map(([n,c])=>esc(n)+(c>1?` (${c})`:'')).join(', ')}</p>`:''}
    <div class="tiles"><div class="tile"><b>${recStr(x.r)}</b><span>${x.r.n} partida${x.r.n>1?'s':''} · ${pct(x.r.w,x.r.n)}%</span></div><div class="tile"><b>${fm.length?pct(fm.filter(g=>g.winner==='me').length,fm.length)+'%':'–'}</b><span>você começando (${fm.length})</span></div><div class="tile"><b>${fo.length?pct(fo.filter(g=>g.winner==='me').length,fo.length)+'%':'–'}</b><span>oponente começando (${fo.length})</span></div></div></div>`;
-  if(Object.keys(byDeck).length>1){h+='<div class="card"><h3>Com cada deck seu</h3><div>';Object.entries(byDeck).forEach(([id,list])=>{const r=record(list),d=getDoc(id);h+=`<div class="mrow">${d?inksHTML(d.inks):'<span></span>'}<b style="min-width:0">${esc(d?d.name:'Deck removido')}</b><span class="num"><b>${pct(r.w,r.n)}%</b> <span class="small muted">${recStr(r)}</span></span><div class="bar"><i style="width:${pct(r.w,r.n)}%"></i></div></div>`});h+='</div></div>'}
+  if(Object.keys(byDeck).length>1){h+='<div class="card"><h3>Com cada deck seu</h3><div>';Object.entries(byDeck).forEach(([id,list])=>{const r=record(list),d=getDoc(id);h+=srow({icon:d?inksHTML(d.inks):'',title:esc(d?d.name:'Deck removido'),n:r.n,r,sub:[recStr(r)]})});h+='</div></div>'}
   h+=`<div class="card"><h3>Notas contra esse matchup</h3>`;
   if(tagList.length)h+=`<div class="seg">${tagList.map(([t,c])=>`<span class="tagcount">${esc(t)} <b>${c}</b></span>`).join('')}</div>`;
-  if(noted.length)h+=`<div>${noted.map(m=>{const ev=m.eventId?getDoc(m.eventId):null;return`<div class="hist-note"><div class="row between"><span class="small muted">${fmtDate(m.date)} · ${ev?esc(ev.name)+' R'+m.round:'Avulsa'} · ${esc(deckName(m.deckId))}</span>${resBadge(m.result)}</div>${m.tags&&m.tags.length?`<span class="small"><b>${esc(m.tags.join(' · '))}</b></span>`:''}${m.notes?`<p class="note">${esc(m.notes)}</p>`:''}<button class="link small" data-act="openMatch" data-v="${m.id}" style="align-self:flex-start">Abrir partida</button></div>`}).join('')}</div>`;
+  if(noted.length)h+=`<div>${noted.map(m=>{const ev=m.eventId?getDoc(m.eventId):null;return`<div class="hist-note"><div class="row between"><span class="small muted">${m.oppPlayer?'vs '+esc(m.oppPlayer)+' · ':''}${fmtDate(m.date)} · ${ev?esc(ev.name)+' R'+m.round:'Avulsa'} · ${esc(deckName(m.deckId))}</span>${resBadge(m.result)}</div>${m.tags&&m.tags.length?`<span class="small"><b>${esc(m.tags.join(' · '))}</b></span>`:''}${m.notes?`<p class="note">${esc(m.notes)}</p>`:''}<button class="link small" data-act="openMatch" data-v="${m.id}" style="align-self:flex-start">Abrir partida</button></div>`}).join('')}</div>`;
   else h+='<p class="small muted">Nenhuma nota ainda contra esse matchup.</p>';
   h+='</div>';
   h+=`<div class="card"><h3>Partidas</h3><div class="list">${ms.map(matchItem).join('')}</div></div>`;
@@ -776,22 +810,21 @@ function vStats(){
   const sel=(k,opts,lab)=>`<label class="f"><span class="hint">${lab}</span><select id="sf-${k}" data-sf="${k}">${opts.map(o=>`<option value="${o.id}" ${F[k]===o.id?'selected':''}>${esc(o.name)}</option>`).join('')}</select></label>`;
   const periods=[{id:'all',name:'Todo o período'},{id:'30',name:'Últimos 30 dias'},{id:'90',name:'Últimos 90 dias'},{id:'365',name:'Último ano'}];
   if(dk&&dk.listUpdated)periods.push({id:'deckver',name:'Desde a última mudança do deck'});
-  let h=`<h2>Estatísticas</h2><div class="card">${sel('deck',[{id:'all',name:'Todos os decks'},...ds.map(d=>({id:d.id,name:d.name+(d.archived?' (arquivado)':'')}))],'Deck')}<div class="grid2">${sel('period',periods,'Período')}${sel('type',[{id:'all',name:'Todos os tipos'},...EVENT_TYPES,{id:'casual',name:'Partidas avulsas'}],'Tipo')}</div></div>`;
+  let h=`<h2>Estatísticas</h2><div class="card">${sel('deck',[{id:'all',name:'Todos os decks'},...ds.map(d=>({id:d.id,name:d.name+(d.archived?' (arquivado)':'')}))],'Deck')}<div class="filters">${sel('period',periods,'Período')}${sel('type',[{id:'all',name:'Todos os tipos'},...EVENT_TYPES,{id:'casual',name:'Partidas avulsas'}],'Tipo')}</div></div>`;
   if(!D.ms.length&&!D.evs.length)return bannerMain()+`<main class="app">${h}<div class="card empty"><p class="muted">Sem partidas com esses filtros.</p></div></main>`;
   const small=n=>n<5?'<span class="flag">poucos jogos</span>':'';
   const r=D.r;
-  h+=`<div class="tiles"><div class="tile"><b>${r.n}</b><span>partidas · ${recStr(r)}</span></div><div class="tile"><b>${pct(r.w,r.n)}%</b><span>vitórias em partidas</span></div><div class="tile"><b>${D.games.length?pct(D.gw,D.games.length)+'%':'–'}</b><span>vitórias em jogos (${D.games.length})</span></div></div>`;
+  h+=`<div class="tiles"><div class="tile"><b>${r.n}</b><span>partidas · <span class="nw">${recStr(r)}</span></span></div><div class="tile"><b>${pct(r.w,r.n)}%</b><span>vitórias em partidas</span></div><div class="tile"><b>${D.games.length?pct(D.gw,D.games.length)+'%':'–'}</b><span>vitórias em jogos (${D.games.length})</span></div></div>`;
   h+=evoCard(D.ms);
   h+=`<div class="card"><h3>Quem começa</h3>
-   <div class="mrow"><span></span><span>Você começando</span><span class="num"><b>${D.fm.length?pct(D.fmw,D.fm.length)+'%':'–'}</b> <span class="small muted">${D.fmw}/${D.fm.length}</span>${small(D.fm.length)}</span><div class="bar"><i style="width:${pct(D.fmw,D.fm.length)}%"></i></div></div>
-   <div class="mrow"><span></span><span>Oponente começando</span><span class="num"><b>${D.fo.length?pct(D.fow,D.fo.length)+'%':'–'}</b> <span class="small muted">${D.fow}/${D.fo.length}</span>${small(D.fo.length)}</span><div class="bar"><i style="width:${pct(D.fow,D.fo.length)}%"></i></div></div>
+   <div>${srow({title:'Você começando',n:D.fm.length,r:{w:D.fmw,n:D.fm.length},sub:[`${D.fmw} de ${D.fm.length} jogos`]})}${srow({title:'Oponente começando',n:D.fo.length,r:{w:D.fow,n:D.fo.length},sub:[`${D.fow} de ${D.fo.length} jogos`]})}</div>
    <p class="small muted">Sequência atual: <b>${D.cur} ${D.curT==='win'?(D.cur>1?'vitórias':'vitória'):D.curT==='loss'?(D.cur>1?'derrotas':'derrota'):(D.cur>1?'empates':'empate')}</b> · melhor sequência de vitórias: <b>${D.best}</b></p></div>`;
   h+=`<div class="card"><div class="row between"><h3>Matchups</h3><span class="small muted">por cores do oponente</span></div><div>`;
-  D.matchups.forEach(x=>{const nn=D.ms.filter(m=>(inkKey(m.oppInks)||'?')===x.key&&(m.notes||(m.tags&&m.tags.length))).length;h+=`<button class="mrow mbtn" data-act="openMatchup" data-v="${esc(x.key)}">${inksHTML(x.inks)}<span style="min-width:0"><b>${esc(x.label)}</b>${x.nick?`<br><span class="small muted">${esc(x.nick)}</span>`:''}${nn?`<br><span class="small muted">${nn} com notas</span>`:''}</span><span class="num" style="text-align:right"><b>${pct(x.r.w,x.r.n)}%</b> <span class="small muted">${recStr(x.r)}</span>${small(x.r.n)}<span class="chev" aria-hidden="true">›</span></span><span class="bar"><i style="width:${pct(x.r.w,x.r.n)}%"></i></span></button>`});
+  D.matchups.forEach(x=>{const nn=D.ms.filter(m=>(inkKey(m.oppInks)||'?')===x.key&&(m.notes||(m.tags&&m.tags.length))).length;h+=srow({act:'openMatchup',v:x.key,icon:inksHTML(x.inks),title:esc(x.label),n:x.r.n,r:x.r,sub:[recStr(x.r),x.nick?esc(x.nick):'',nn?`${nn} com notas`:'']})});
   h+='</div><p class="hint">Toque num matchup para ver as partidas e todas as notas contra ele.</p></div>';
   h+=matrixCard(D);
-  if(F.deck==='all'){h+='<div class="card"><h3>Por deck</h3><div>';D.byDeck.forEach(x=>{h+=`<div class="mrow">${x.deck?inksHTML(x.deck.inks):'<span></span>'}<b style="min-width:0">${esc(x.deck?x.deck.name:'Deck removido')}</b><span class="num"><b>${pct(x.r.w,x.r.n)}%</b> <span class="small muted">${recStr(x.r)}</span>${small(x.r.n)}</span><div class="bar"><i style="width:${pct(x.r.w,x.r.n)}%"></i></div></div>`});h+='</div></div>'}
-  if(F.type==='all'){h+='<div class="card"><h3>Por tipo de evento</h3><div>';D.byType.forEach(x=>{h+=`<div class="mrow"><span></span><b>${esc(x.name)}</b><span class="num"><b>${pct(x.r.w,x.r.n)}%</b> <span class="small muted">${recStr(x.r)}</span>${small(x.r.n)}</span><div class="bar"><i style="width:${pct(x.r.w,x.r.n)}%"></i></div></div>`});h+='</div></div>'}
+  if(F.deck==='all'){h+='<div class="card"><h3>Por deck</h3><div>';D.byDeck.forEach(x=>{h+=srow({icon:x.deck?inksHTML(x.deck.inks):'',title:esc(x.deck?x.deck.name:'Deck removido'),n:x.r.n,r:x.r,sub:[recStr(x.r),`${x.r.n} partida${x.r.n>1?'s':''}`]})});h+='</div></div>'}
+  if(F.type==='all'){h+='<div class="card"><h3>Por tipo de evento</h3><div>';D.byType.forEach(x=>{h+=srow({title:esc(x.name),n:x.r.n,r:x.r,sub:[recStr(x.r),`${x.r.n} partida${x.r.n>1?'s':''}`]})});h+='</div></div>'}
   h+=`<div class="card"><h3>Placar</h3><div class="grid2"><div><b class="money" style="font-size:1.5rem">${dec1(D.avgOppWin)}</b><p class="small muted">lore médio do oponente quando você vence</p></div><div><b class="money" style="font-size:1.5rem">${dec1(D.avgMeLoss)}</b><p class="small muted">seu lore médio quando perde</p></div></div><p class="small muted">Perto de ${LORE_GOAL} = jogos apertados. Conta os jogos com placar.</p></div>`;
   if(F.type!=='casual')h+=`<div class="card"><h3>Eventos e dinheiro</h3>
    <div class="tiles"><div class="tile"><b>${D.evs.length}</b><span>eventos</span></div><div class="tile"><b>${D.avgPlace==null?'–':dec1(D.avgPlace)+'º'}</b><span>colocação média</span></div><div class="tile"><b>${D.tops}</b><span>vezes no top 8</span></div></div>
@@ -802,8 +835,8 @@ function vStats(){
    <div class="mrow"><span></span><span>Saldo contando o estimado</span><span class="money ${D.real+D.est-D.fee>=0?'pos':'neg'}">${brl(D.real+D.est-D.fee)}</span></div></div>`;
   const noted=D.ms.filter(m=>m.notes||(m.tags&&m.tags.length)).slice(-6).reverse();
   if(noted.length){h+='<div class="card"><h3>Notas recentes</h3><div class="list">';noted.forEach(m=>{h+=`<button class="item" data-act="openMatch" data-v="${m.id}">${inksHTML(m.oppInks)}<span class="grow"><span class="small muted">${fmtDate(m.date)} · ${esc(m.oppName||inkNames(m.oppInks))}</span><br><span class="note">${esc([...(m.tags||[])].join(' · '))}${m.tags&&m.tags.length&&m.notes?'\n':''}${esc(m.notes||'')}</span></span></button>`});h+='</div></div>'}
-  h+=`<div class="card"><h3>Exportar</h3><p class="small muted">Usa os filtros acima. As planilhas abrem no Excel e no Google Planilhas.</p>
-   <div class="stack"><button class="btn wide" data-act="exportCsv" data-v="partidas">Partidas (planilha CSV)</button><button class="btn wide" data-act="exportCsv" data-v="matchups">Matchups (planilha CSV)</button>${F.type!=='casual'?'<button class="btn wide" data-act="exportCsv" data-v="eventos">Eventos e prêmios (planilha CSV)</button>':''}<button class="btn wide" data-act="copySummary">Copiar resumo em texto</button></div>
+  h+=`<div class="card"><h3>Exportar</h3>
+   <div class="exp-row"><select id="exp-kind" aria-label="O que exportar"><option value="partidas">Partidas (planilha)</option><option value="matchups">Matchups (planilha)</option>${F.type!=='casual'?'<option value="eventos">Eventos e prêmios (planilha)</option>':''}<option value="resumo">Resumo em texto (copiar)</option></select><button class="btn primary" data-act="exportSel">Exportar</button></div>
    ${S.ui.exportText?`<label class="f">${esc(S.ui.exportLabel||'Copie o texto')}<textarea id="exp-text" class="mono" readonly>${esc(S.ui.exportText)}</textarea></label><button class="btn small" data-act="copyExport">Copiar</button>`:''}</div>`;
   return bannerMain()+`<main class="app">${h}</main>`;
 }
@@ -815,9 +848,9 @@ function toCSV(rows){return'﻿'+rows.map(r=>r.map(csvCell).join(';')).join('\r\
 function csvFor(kind){
   const D=statsData();
   if(kind==='partidas'){
-    const rows=[['Data','Evento','Tipo','Rodada','Formato','Meu deck','Cores do oponente','Apelido do oponente','Resultado','Jogos vencidos','Jogos perdidos','Placar dos jogos','Quem começou','Registro','Etiquetas','Notas']];
+    const rows=[['Data','Evento','Tipo','Rodada','Formato','Meu deck','Cores do oponente','Apelido do oponente','Jogador oponente','Resultado','Jogos vencidos','Jogos perdidos','Placar dos jogos','Quem começou','Registro','Etiquetas','Notas']];
     D.ms.forEach(m=>{const ev=m.eventId?getDoc(m.eventId):null;const w=gameWins(m.games);
-      rows.push([fmtDate(m.date),ev?ev.name:'Partida avulsa',ev?typeName(ev.type):'',m.round||'',m.format==='md3'?'MD3':'MD1',deckName(m.deckId),inkNames(m.oppInks),m.oppName||'',{win:'Vitória',loss:'Derrota',draw:'Empate'}[m.result]||'',w.me,w.opp,(m.games||[]).map(g=>g.how!=='manual'&&g.me!=null&&g.me!==''?`${g.me}-${g.opp}`:(g.winner==='me'?'V':g.winner==='opp'?'D':'E')).join(' / '),(m.games||[]).map(g=>g.first==='me'?'eu':g.first==='opp'?'oponente':'?').join(' / '),m.entry==='manual'?'Sem contador':'Contador',(m.tags||[]).join(', '),m.notes||''])});
+      rows.push([fmtDate(m.date),ev?ev.name:'Partida avulsa',ev?typeName(ev.type):'',m.round||'',m.format==='md3'?'MD3':'MD1',deckName(m.deckId),inkNames(m.oppInks),m.oppName||'',m.oppPlayer||'',{win:'Vitória',loss:'Derrota',draw:'Empate'}[m.result]||'',w.me,w.opp,(m.games||[]).map(g=>g.how!=='manual'&&g.me!=null&&g.me!==''?`${g.me}-${g.opp}`:(g.winner==='me'?'V':g.winner==='opp'?'D':'E')).join(' / '),(m.games||[]).map(g=>g.first==='me'?'eu':g.first==='opp'?'oponente':'?').join(' / '),m.entry==='manual'?'Sem contador':'Contador',(m.tags||[]).join(', '),m.notes||''])});
     return rows;
   }
   if(kind==='matchups'){
@@ -831,7 +864,7 @@ function csvFor(kind){
 }
 function summaryText(){
   const D=statsData(),F=D.F;const dk=F.deck!=='all'?getDoc(F.deck):null;
-  const L=[];L.push('Diário de Lore · '+periodLabel(F));
+  const L=[];L.push('Side Quest · '+periodLabel(F));
   const filt=[dk?'Deck: '+dk.name:'Todos os decks',F.type==='all'?'todos os tipos':F.type==='casual'?'partidas avulsas':typeName(F.type)];L.push(filt.join(' · '));L.push('');
   L.push(`Partidas: ${D.r.n} (${recStr(D.r)}) · ${pct(D.r.w,D.r.n)}% de vitórias`);
   if(D.games.length)L.push(`Jogos: ${D.games.length} · ${pct(D.gw,D.games.length)}% de vitórias`);
@@ -840,7 +873,6 @@ function summaryText(){
   if(D.evs.length){L.push('');L.push(`Eventos: ${D.evs.length}${D.avgPlace!=null?' · colocação média '+dec1(D.avgPlace)+'º':''} · top 8: ${D.tops}`);L.push(`Saldo real: ${brl(D.real-D.fee)} (inscrições ${brl(D.fee)}, prêmios ${brl(D.real)})`);if(D.est)L.push(`Prêmios estimados: ${brl(D.est)}`)}
   return L.join('\n');
 }
-const STANDALONE=!(window.claude&&window.claude.use);
 async function offerFile(filename,data,label){
   if(STANDALONE){try{const type=/\.csv$/.test(filename)?'text/csv;charset=utf-8':/\.json$/.test(filename)?'application/json':'text/plain;charset=utf-8';const url=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Arquivo salvo em Downloads');return true}catch(e){}}
   if(S.downloads){try{await S.downloads.save({filename,data});toast('Arquivo salvo');return true}catch(e){if(e&&e.code==='declined')return}}
@@ -856,22 +888,26 @@ function vDecks(){
   else{h+='<div class="card"><div class="list">';ds.forEach(d=>{const rr=record(ms.filter(m=>m.deckId===d.id));const p=parseList(d.list);h+=`<button class="item" data-act="openDeck" data-v="${d.id}">${inksHTML(d.inks)}<span class="grow"><span class="t">${esc(d.name)}</span>${d.archived?' <span class="flag">arquivado</span>':''}<br><span class="small muted">${esc(inkNames(d.inks))}${p.cards.length?` · ${p.total} cartas`:' · sem decklist'}</span></span><span class="num" style="text-align:right"><b>${rr.n?pct(rr.w,rr.n)+'%':'–'}</b><br><span class="small muted">${recStr(rr)}</span></span></button>`});h+='</div></div>'}
   return bannerMain()+`<main class="app">${h}</main>`;
 }
-function backupInfo(){const b=lsGet(LS_BACKUP,null);const lastData=Math.max(0,...[...S.docs.values()].map(d=>d.created||0));return{b,days:b?Math.floor((Date.now()-b.at)/864e5):null,changed:!b||lastData>b.at}}
-function backupLine(){const i=backupInfo();if(!i.b)return'<p class="warnline">Você ainda não fez nenhum backup neste aparelho.</p>';return`<p class="${i.changed&&i.days>=7?'warnline':'small muted'}">Último backup: ${i.days===0?'hoje':i.days===1?'ontem':'há '+i.days+' dias'}${i.changed?' · há partidas novas desde então':' · tudo salvo'}</p>`}
+function backupInfo(){const b=lsGet(LS_BACKUP,null);const dirty=lsGet(LS_DIRTY,0)||Math.max(0,...[...S.docs.values()].map(d=>d.created||0));return{b,days:b?Math.floor((Date.now()-b.at)/864e5):null,changed:S.docs.size>0&&(!b||dirty>b.at)}}
+function needsBackup(){return S.mode==='local'&&backupInfo().changed}
+function backupLine(){const i=backupInfo();if(!i.b)return`<p class="${i.changed?'warnline':'small muted'}">Você ainda não fez nenhum backup neste aparelho.</p>`;return`<p class="${i.changed?'warnline':'small muted'}">Último backup: ${i.days===0?'hoje':i.days===1?'ontem':'há '+i.days+' dias'}${i.changed?' · há alterações depois dele':' · tudo salvo'}</p>`}
 function vSettings(){
   let h='<h2>Ajustes</h2>';
-  h+=`<div class="card"><h3>Aparência</h3><p class="small muted">Os mesmos temas do Starter Quest. O automático segue o modo claro ou escuro do aparelho.</p>
-   <div class="seg">${[{id:'',name:'Automático'},...THEMES].map(t=>`<button class="chip" data-act="theme" data-v="${t.id}" aria-pressed="${(S.theme||'')===t.id}">${t.sw?`<span style="width:12px;height:12px;border-radius:50%;background:${t.sw};display:inline-block;box-shadow:0 0 0 1px var(--line)"></span>`:''}${t.name}</button>`).join('')}</div></div>`;
+  h+=`<div class="card"><h3>Aparência</h3>
+   <div class="swq-row" role="group" aria-label="Tema">${[{id:'',name:'Automático (segue o celular)',bg:'linear-gradient(135deg,#3D35A8 50%,#131319 50%)'},...THEMES.map(t=>({id:t.id,name:t.name,bg:t.sw}))].map(t=>`<button class="swq" data-act="theme" data-v="${t.id}" aria-pressed="${(S.theme||'')===t.id}" aria-label="${t.name}" title="${t.name}" style="background:${t.bg}"></button>`).join('')}</div></div>`;
   h+=`<div class="card"><h3>Backup</h3>${backupLine()}<p class="small muted">${S.mode==='cloud'?'Seus dados ficam salvos na sua conta e neste aparelho. Guarde um backup de vez em quando.':'Seus dados estão só neste aparelho. Exporte um backup para não perder nada.'}</p>
-   <div class="row"><button class="btn" data-act="export">Exportar backup</button><button class="btn" data-act="import">Importar backup</button></div>
+   <div class="row"><button class="btn ${needsBackup()?'gold':''}" data-act="export">Exportar backup</button><button class="btn" data-act="import">Importar backup</button></div>
+   ${S.ui.importData?`<div class="confirm"><p><b>Substituir os dados deste aparelho pelo backup?</b><br><span class="small">O backup tem ${S.ui.importData.n} registros (de ${fmtDate(S.ui.importData.date)||'data desconhecida'}). Tudo o que estiver aqui e não estiver no backup será apagado.</span></p><div class="row"><button class="btn danger" data-act="confirmImport">Substituir</button><button class="btn" data-act="ui" data-k="importData" data-v="">Cancelar</button></div></div>`:''}
    ${S.ui.exportText?`<label class="f">Copie e guarde este texto<textarea id="exp-text" class="mono" readonly>${esc(S.ui.exportText)}</textarea></label><button class="btn small" data-act="copyExport">Copiar</button>`:''}</div>`;
+  h+=`<p class="small muted" style="text-align:center">Side Quest · versão ${APP_VERSION}</p>`;
+  if(S.ui.backupSheet)h+=`<div class="overlay"><div class="sheet" role="dialog" aria-label="Backup pendente"><h2>Faça um backup</h2><p>Você registrou ou mudou coisas depois do último backup. Como os dados ficam só neste celular, vale salvar uma cópia agora.</p><button class="btn gold big" data-act="export">Exportar backup</button><button class="btn wide" data-act="ui" data-k="backupSheet" data-v="">Agora não</button></div></div>`;
   return bannerMain()+`<main class="app">${h}</main>`;
 }
 function vDeck(){
   const d=getDoc(S.sel);if(!d){S.view='decks';return vDecks()}
   const ms=matches().filter(m=>m.deckId===d.id),rr=record(ms);const p=parseList(d.list);
   let h=`<div class="card"><div class="row">${inksHTML(d.inks)}<span class="muted small">${esc(inkNames(d.inks))}</span></div>
-   <div class="tiles"><div class="tile"><b>${rr.n}</b><span>partidas</span></div><div class="tile"><b>${rr.n?pct(rr.w,rr.n)+'%':'–'}</b><span>vitórias (${recStr(rr)})</span></div><div class="tile"><b>${p.cards.length?p.total:'–'}</b><span>cartas na lista</span></div></div>
+   <div class="tiles"><div class="tile"><b>${rr.n}</b><span>partidas</span></div><div class="tile"><b>${rr.n?pct(rr.w,rr.n)+'%':'–'}</b><span>vitórias (<span class="nw">${recStr(rr)}</span>)</span></div><div class="tile"><b>${p.cards.length?p.total:'–'}</b><span>cartas na lista</span></div></div>
    <div class="twin"><button class="btn wide" data-act="editDeck" data-v="${d.id}">Editar deck</button><button class="btn wide" data-act="deckStats" data-v="${d.id}">Ver estatísticas</button></div></div>`;
   h+=`<div class="card"><div class="row between"><h3>Decklist</h3>${p.cards.length?`<button class="btn small" data-act="copyList" data-v="${d.id}">Copiar para o duels.ink</button>`:''}</div>`;
   if(p.cards.length){h+=listCheck(p)+`<div class="dl">${p.cards.map(c=>`<div class="dl-row"><b>${c.qty}</b><span>${esc(c.name)}</span><small>${esc(c.print)}</small></div>`).join('')}</div>${d.listUpdated?`<p class="small muted">Atualizada em ${fmtDate(d.listUpdated)}</p>`:''}`}
@@ -919,7 +955,7 @@ function cleanGames(gs){return gs.filter(g=>g.winner).map(g=>{const has=g.me!=='
 async function copyText(t,okMsg){try{await navigator.clipboard.writeText(t);toast(okMsg||'Copiado');return true}catch(e){return false}}
 
 const A={
-  go:d=>{S.ui={};if(d.v==='closeEvent'){const ev=openEvent()||getDoc(S.sel);if(!ev)return;S.sel=ev.id;S.form=closeForm(ev)}
+  go:d=>{S.ui={};if(d.v==='settings'&&S.view!=='settings'&&needsBackup())S.ui.backupSheet=true;if(d.v==='closeEvent'){const ev=openEvent()||getDoc(S.sel);if(!ev)return;S.sel=ev.id;S.form=closeForm(ev)}
     if(d.v==='event'&&S.view==='match'){const m=getDoc(S.sel);if(m&&m.eventId)S.sel=m.eventId}
     if(d.v==='deck'&&S.view==='deckEdit'&&!S.sel){go('decks');return}
     go(d.v)},
@@ -930,6 +966,7 @@ const A={
   pickOpp:d=>{const f=S.form;if(f.oppName===d.v){f.oppName='';render();return}const hit=inksForName(d.v);f.oppName=hit?hit.name:d.v;if(hit)f.oppInks=[...hit.inks];render()},
   pickDeck:d=>{S.form[d.f]=d.v;S.ui.err=null;render()},
   toggleInk:d=>{const cur=getPath(S.form,d.f)||[];setPath(S.form,d.f,toggleIn(cur,d.v,2));render()},
+  addTag:()=>{const i=document.getElementById('m-newtag');const t=((i&&i.value)||S.form.newTag||'').trim().replace(/\s+/g,' ');if(!t)return;const ex=allTags().find(x=>x.toLowerCase()===t.toLowerCase())||t;S.form.tags=S.form.tags||[];if(!S.form.tags.includes(ex))S.form.tags.push(ex);S.form.newTag='';render()},
   toggleTag:d=>{S.form.tags=toggleIn(S.form.tags,d.v,99);render()},
   showNewDeck:()=>{S.form.nd={name:'',inks:[]};render();const i=document.getElementById('nd-name');if(i)i.focus()},
   cancelNewDeck:()=>{S.form.nd=null;render()},
@@ -945,7 +982,7 @@ const A={
   saveQuick:()=>{const Q=S.quick,f=S.form;const gs=cleanGames(f.games);const res=quickResult();
     if(!res){S.ui.err='Marque quem venceu o jogo, ou escolha o resultado da partida.';render();return}
     const id=newId('match');
-    write(id,{kind:'match',eventId:Q.eventId,round:Q.round,deckId:Q.deckId,format:Q.format,date:Q.eventId?((getDoc(Q.eventId)||{}).date||today()):today(),created:Date.now(),games:gs,result:res,entry:'manual',oppInks:f.oppInks||[],oppName:(f.oppName||'').trim(),tags:f.tags||[],notes:(f.notes||'').trim()});
+    write(id,{kind:'match',eventId:Q.eventId,round:Q.round,deckId:Q.deckId,format:Q.format,date:Q.eventId?((getDoc(Q.eventId)||{}).date||today()):today(),created:Date.now(),games:gs,result:res,entry:'manual',oppInks:f.oppInks||[],oppName:(f.oppName||'').trim(),oppPlayer:(f.oppPlayer||'').trim(),tags:f.tags||[],notes:(f.notes||'').trim()});
     const back=Q.back;S.quick=null;S.ui={};toast('Partida salva');if(back==='event'&&Q.eventId)go('event',Q.eventId);else go('home')},
   toQuick:()=>{const L=S.live;S.live=null;lsSet(LS_LIVE,null);startQuick({eventId:L.eventId,round:L.round,deckId:L.deckId,format:L.format},L.games)},
   first:d=>{const L=S.live;L.cur.first=d.v;L.phase='play';saveLive();render()},
@@ -966,11 +1003,11 @@ const A={
   cancelMatch:()=>{S.live=null;lsSet(LS_LIVE,null);S.ui={};go('home')},
   backToCounter:()=>{const L=S.live;const g=L.games.pop();L.cur=g?{me:g.me,opp:g.opp,first:g.first,hist:[]}:{me:0,opp:0,first:null,hist:[]};L.phase=g&&g.first?'play':'first';L.end=null;saveLive();go('counter')},
   saveMatch:()=>{const L=S.live,f=S.form;const id=newId('match');
-    write(id,{kind:'match',eventId:L.eventId,round:L.round,deckId:L.deckId,format:L.format,date:L.eventId?((getDoc(L.eventId)||{}).date||today()):today(),created:Date.now(),games:L.games,result:f.result,entry:'counter',oppInks:f.oppInks||[],oppName:(f.oppName||'').trim(),tags:f.tags||[],notes:(f.notes||'').trim()});
+    write(id,{kind:'match',eventId:L.eventId,round:L.round,deckId:L.deckId,format:L.format,date:L.eventId?((getDoc(L.eventId)||{}).date||today()):today(),created:Date.now(),games:L.games,result:f.result,entry:'counter',oppInks:f.oppInks||[],oppName:(f.oppName||'').trim(),oppPlayer:(f.oppPlayer||'').trim(),tags:f.tags||[],notes:(f.notes||'').trim()});
     S.live=null;lsSet(LS_LIVE,null);S.ui={};toast('Partida salva');go('home')},
   openEvent:d=>{S.ui={};go('event',d.v)},
-  openMatch:d=>{const m=getDoc(d.v);if(!m)return;S.ui={};S.form={result:m.result,oppInks:[...(m.oppInks||[])],oppName:m.oppName||'',tags:[...(m.tags||[])],notes:m.notes||''};go('match',d.v)},
-  updateMatch:()=>{const m=getDoc(S.sel),f=S.form;if(!m)return;write(m.id,Object.assign({},m,{result:f.result,oppInks:f.oppInks,oppName:(f.oppName||'').trim(),tags:f.tags,notes:(f.notes||'').trim()}));toast('Partida atualizada');if(m.eventId)go('event',m.eventId);else go('history')},
+  openMatch:d=>{const m=getDoc(d.v);if(!m)return;S.ui={};S.form={result:m.result,oppInks:[...(m.oppInks||[])],oppName:m.oppName||'',oppPlayer:m.oppPlayer||'',tags:[...(m.tags||[])],notes:m.notes||''};go('match',d.v)},
+  updateMatch:()=>{const m=getDoc(S.sel),f=S.form;if(!m)return;write(m.id,Object.assign({},m,{result:f.result,oppInks:f.oppInks,oppName:(f.oppName||'').trim(),oppPlayer:(f.oppPlayer||'').trim(),tags:f.tags,notes:(f.notes||'').trim()}));toast('Partida atualizada');if(m.eventId)go('event',m.eventId);else go('history')},
   delMatch:()=>{const m=getDoc(S.sel);if(!m)return;remove(m.id);S.ui={};toast('Partida excluída');if(m.eventId)go('event',m.eventId);else go('history')},
   delEvent:()=>{const ev=getDoc(S.sel);if(!ev)return;eventMatches(ev.id).forEach(m=>remove(m.id));remove(ev.id);if(S.live&&S.live.eventId===ev.id){S.live=null;lsSet(LS_LIVE,null)}S.ui={};toast('Evento excluído');go('history')},
   addMatchToEvent:()=>{const ev=getDoc(S.sel);if(!ev)return;startQuick({eventId:ev.id,round:eventMatches(ev.id).length+1,deckId:ev.deckId,format:ev.format,back:'event'})},
@@ -1005,12 +1042,14 @@ const A={
     S.ui={};toast('Deck salvo');go('deck',id)},
   copyList:async d=>{const k=getDoc(d.v);if(!k)return;if(!(await copyText(listToText(parseList(k.list)),'Decklist copiada'))){S.ui.exportText=listToText(parseList(k.list));render()}},
   copyVersion:async d=>{const k=getDoc(d.d);const v=k&&(k.versions||[])[parseInt(d.v,10)];if(v)await copyText(v.list,'Versão copiada')},
-  exportCsv:d=>{const rows=csvFor(d.v);const name={partidas:'partidas',matchups:'matchups',eventos:'eventos'}[d.v];offerFile(`diario-de-lore-${name}-${today()}.csv`,toCSV(rows),'Copie e cole numa planilha')},
+  exportCsv:d=>{const rows=csvFor(d.v);const name={partidas:'partidas',matchups:'matchups',eventos:'eventos'}[d.v];offerFile(`side-quest-${name}-${today()}.csv`,toCSV(rows),'Copie e cole numa planilha')},
+  exportSel:()=>{const v=(document.getElementById('exp-kind')||{}).value||'partidas';if(v==='resumo')A.copySummary();else A.exportCsv({v})},
   copySummary:async()=>{const t=summaryText();if(!(await copyText(t,'Resumo copiado'))){S.ui.exportText=t;S.ui.exportLabel='Resumo';render()}},
-  export:async()=>{const o={};S.docs.forEach((d,id)=>o[id]=d);const json=JSON.stringify({app:'diario-de-lore',version:2,exported:new Date().toISOString(),docs:o},null,1);
-    if(await offerFile(`diario-de-lore-backup-${today()}.json`,json,'Copie e guarde este texto')){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});render()}},
+  export:async()=>{const o={};S.docs.forEach((d,id)=>o[id]=d);const json=JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1);
+    if(await offerFile(`side-quest-backup-${today()}.json`,json,'Copie e guarde este texto')){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}},
   copyExport:async()=>{const t=document.getElementById('exp-text');if(!(await copyText(S.ui.exportText))&&t){t.focus();t.select()}},
-  import:()=>document.getElementById('importFile').click()
+  import:()=>document.getElementById('importFile').click(),
+  confirmImport:()=>{const imp=S.ui.importData;if(!imp)return;[...S.docs.keys()].forEach(id=>{if(!imp.docs[id])remove(id)});Object.entries(imp.docs).forEach(([id,d])=>write(id,d));lsSet(LS_BACKUP,{at:Date.now()+1,n:imp.n});S.ui={};toast(imp.n+' registros restaurados');render()}
 };
 function closeForm(ev){return{placement:ev.placement?String(ev.placement):'',players:ev.players?String(ev.players):'',fee:ev.fee?String(ev.fee).replace('.',','):'',prizes:(ev.prizes||[]).map(p=>({type:p.type,value:String(p.value).replace('.',','),desc:p.desc||''})),notes:ev.notes||''}}
 
@@ -1025,9 +1064,10 @@ function onField(e){const el=e.target;
     if(el.dataset.f==='list'){const c=document.getElementById('dl-check');if(c)c.innerHTML=listCheck(parseList(v))}
     if(el.dataset.f==='oppName'&&(e.type==='change'||e.inputType==='insertReplacementText'||(e.type==='input'&&!e.inputType))){const hit=inksForName(v);if(hit){const ch=inkKey(hit.inks)!==inkKey(S.form.oppInks);S.form.oppName=hit.name;S.form.oppInks=[...hit.inks];if(ch){render();toast('Cores de '+hit.name+' preenchidas')}}}}
   else if(el.dataset.sf&&e.type==='change'){S.statsF[el.dataset.sf]=el.value;if(el.dataset.sf==='deck'&&S.statsF.period==='deckver')S.statsF.period='all';lsSet(LS_STATS,S.statsF);S.ui.exportText=null;render()}}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='m-newtag'){e.preventDefault();A.addTag()}});
 document.addEventListener('input',e=>{if(e.target.dataset.f)onField(e)});
 document.addEventListener('change',e=>{onField(e)});
-document.getElementById('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);const docs=o&&o.docs;if(!docs||typeof docs!=='object')throw 0;let n=0;for(const [id,d] of Object.entries(docs)){if(d&&['deck','event','match'].includes(d.kind)&&/^[A-Za-z0-9_\-.~:@+]+$/.test(id)){write(id,d);n++}}toast(n+' registros importados');render()}catch(err){toast('Esse arquivo não é um backup do Diário de Lore')}e.target.value=''};r.readAsText(file)});
+document.getElementById('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);const docs=o&&o.docs;if(!docs||typeof docs!=='object')throw 0;const ok={};for(const [id,d] of Object.entries(docs)){if(d&&['deck','event','match'].includes(d.kind)&&/^[A-Za-z0-9_\-.~:@+]+$/.test(id))ok[id]=d}const n=Object.keys(ok).length;if(!n)throw 0;S.ui.importData={docs:ok,n,date:(o.exported||'').slice(0,10)};S.ui.backupSheet=false;render()}catch(err){toast('Esse arquivo não é um backup do Side Quest')}e.target.value=''};r.readAsText(file)});
 
 if(S.live&&S.live.phase){if(S.live.phase==='result'){S.view='result';S.form={result:resultOf(S.live.games),oppInks:[],oppName:'',tags:[],notes:''}}else S.view='counter'}
 render();
@@ -1035,10 +1075,10 @@ connect();
 if(S.view==='counter')wakeOn();
 if(STANDALONE){try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}}
 /* Android back button: go to the parent screen instead of closing the app */
-const ROOTS=['home','history','stats','decks','settings'];let guard=false;
+const ROOTS=['home','history','stats','decks','settings'];let guard=false,skipPop=false;
 function parentOf(v){if(v==='closeEvent'){const ev=getDoc(S.sel);return ev&&ev.status==='done'?'event':'home'}if(v==='match'){const m=getDoc(S.sel);if(m&&m.eventId){S.sel=m.eventId;return'event'}return'history'}if(v==='deckEdit')return S.sel?'deck':'decks';return{newEvent:'home',newCasual:'home',eventEdit:'event',event:'history',matchup:'stats',deck:'decks',history:'home',stats:'home',decks:'home',settings:'home'}[v]||'home'}
-function syncGuard(){try{if(S.view!=='home'&&!guard){history.pushState({dl:1},'');guard=true}else if(S.view==='home'&&guard){guard=false;history.back()}}catch(e){}}
-window.addEventListener('popstate',()=>{guard=false;const v=S.view;
+function syncGuard(){try{if(S.view!=='home'&&!guard){history.pushState({dl:1},'');guard=true}else if(S.view==='home'&&guard){guard=false;skipPop=true;history.back()}}catch(e){}}
+window.addEventListener('popstate',()=>{if(skipPop){skipPop=false;syncGuard();return}guard=false;const v=S.view;
   if(v==='counter'){S.ui.sheet='end';S.ui.confirmCancel=false;render();syncGuard();return}
   if(v==='result'||v==='quick'){toast(v==='quick'?'Toque em Voltar para sair sem salvar':'Salve a partida para continuar');syncGuard();return}
   if(v==='home')return;
