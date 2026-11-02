@@ -296,7 +296,7 @@ const PRIZE_TYPES=[{id:'dinheiro',name:'Dinheiro',real:true},{id:'credito',name:
 const TAGS=['Erro de jogada','Mulligan ruim','Faltou tinta','Tinta demais','Carta fraca','Ideia de troca','Matchup difícil','Sorte / azar'];
 const THEMES=[{id:'floresta',name:'Floresta',sw:'#24654A'},{id:'fliperama',name:'Fliperama',sw:'#3D35A8'},{id:'oceano',name:'Oceano',sw:'#0E6A8C'},{id:'escuro',name:'Escuro',sw:'#131319'}];
 const LORE_GOAL=20;
-const APP_VERSION='1.1';
+const APP_VERSION='1.1.1';
 const STANDALONE=!(window.claude&&window.claude.use);
 const LS_DATA='diario-lore-data-v1',LS_PENDING='diario-lore-pending-v1',LS_LIVE='diario-lore-live-v1',LS_STATS='diario-lore-statsf-v1',LS_THEME='diario-lore-theme-v1',LS_BACKUP='diario-lore-backup-v1',LS_DIRTY='diario-lore-dirty-v1',LS_SEEN='diario-lore-seen-version-v1';
 
@@ -499,7 +499,7 @@ function tabsHTML(){
 }
 
 /* ---------- views ---------- */
-const NEWS=[['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
+const NEWS=[['Compartilhar backup','Em Ajustes, mande o backup direto para o Drive, WhatsApp ou e-mail, sem criar um arquivo novo no celular a cada vez.'],['Partida esquecida','Se uma partida ficou aberta há mais de 6 horas, o app abre no início, com a opção de voltar a ela ou descartar.'],['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
 function newsDue(){const seen=lsGet(LS_SEEN,null);if(seen===APP_VERSION)return false;if(!seen&&!S.docs.size){lsSet(LS_SEEN,APP_VERSION);return false}return true}
 function newsOverlay(){return`<div class="overlay news-ov" role="dialog" aria-modal="true" aria-label="Novidades"><div class="newsbox"><span class="eyebrow">Side Quest ${APP_VERSION}</span><h2>Novidades</h2><ul class="news-l">${NEWS.map(n=>`<li><b>${n[0]}</b><span>${n[1]}</span></li>`).join('')}</ul><button class="btn gold big" data-act="newsSeen">Entendi</button></div></div>`}
 function vHome(){
