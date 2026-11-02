@@ -1039,6 +1039,11 @@ function vDecks(){
   else{h+='<div class="card"><div class="list">';ds.forEach(d=>{const rr=record(ms.filter(m=>m.deckId===d.id));const p=parseList(d.list);h+=`<button class="item" data-act="openDeck" data-v="${d.id}">${inksHTML(d.inks)}<span class="grow"><span class="t">${esc(d.name)}</span>${d.archived?' <span class="flag">arquivado</span>':''}<br><span class="small muted">${esc(inkNames(d.inks))}${p.cards.length?` · ${p.total} cartas`:' · sem decklist'}</span></span><span class="num" style="text-align:right"><b>${rr.n?pct(rr.w,rr.n)+'%':'–'}</b><br><span class="small muted">${recStr(rr)}</span></span></button>`});h+='</div></div>'}
   return bannerMain()+`<main class="app">${h}</main>`;
 }
+function backupJSON(){const o={};S.docs.forEach((d,id)=>o[id]=d);return JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1)}
+function backupName(){return`side-quest-backup-${today()}.json`}
+function backupDone(){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}
+/* Compartilhar (Drive, WhatsApp, e-mail): só aparece onde o navegador consegue mandar arquivos, como o Chrome no Android */
+function canShareFiles(){try{return STANDALONE&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]})}catch(e){return false}}
 function backupInfo(){const b=lsGet(LS_BACKUP,null);const dirty=lsGet(LS_DIRTY,0)||Math.max(0,...[...S.docs.values()].map(d=>d.created||0));return{b,days:b?Math.floor((Date.now()-b.at)/864e5):null,changed:S.docs.size>0&&(!b||dirty>b.at)}}
 function needsBackup(){return S.mode==='local'&&backupInfo().changed}
 function backupLine(){const i=backupInfo();if(!i.b)return`<p class="${i.changed?'warnline':'small muted'}">Você ainda não fez nenhum backup neste aparelho.</p>`;return`<p class="${i.changed?'warnline':'small muted'}">Último backup: ${i.days===0?'hoje':i.days===1?'ontem':'há '+i.days+' dias'}${i.changed?' · há alterações depois dele':' · tudo salvo'}</p>`}
@@ -1047,11 +1052,11 @@ function vSettings(){
   h+=`<div class="card"><h3>Aparência</h3>
    <div class="swq-row" role="group" aria-label="Tema">${[{id:'',name:'Automático (segue o celular)',bg:'linear-gradient(135deg,#3D35A8 50%,#131319 50%)'},...THEMES.map(t=>({id:t.id,name:t.name,bg:t.sw}))].map(t=>`<button class="swq" data-act="theme" data-v="${t.id}" aria-pressed="${(S.theme||'')===t.id}" aria-label="${t.name}" title="${t.name}" style="background:${t.bg}"></button>`).join('')}</div></div>`;
   h+=`<div class="card"><h3>Backup</h3>${backupLine()}<p class="small muted">${S.mode==='cloud'?'Seus dados ficam salvos na sua conta e neste aparelho. Guarde um backup de vez em quando.':'Seus dados estão só neste aparelho. Exporte um backup para não perder nada.'}</p>
-   <div class="row"><button class="btn ${needsBackup()?'gold':''}" data-act="export">Exportar backup</button><button class="btn" data-act="import">Importar backup</button></div>
+   <div class="row"><button class="btn ${needsBackup()?'gold':''}" data-act="export">Exportar backup</button><button class="btn" data-act="import">Importar backup</button></div>${canShareFiles()?`<button class="btn wide" data-act="shareBackup">Compartilhar backup (Drive, WhatsApp, e-mail)</button>`:''}
    ${S.ui.importData?`<div class="confirm"><p><b>Substituir os dados deste aparelho pelo backup?</b><br><span class="small">O backup tem ${S.ui.importData.n} registros (de ${fmtDate(S.ui.importData.date)||'data desconhecida'}). Tudo o que estiver aqui e não estiver no backup será apagado.</span></p><div class="row"><button class="btn danger" data-act="confirmImport">Substituir</button><button class="btn" data-act="ui" data-k="importData" data-v="">Cancelar</button></div></div>`:''}
    ${S.ui.exportText?`<label class="f">Copie e guarde este texto<textarea id="exp-text" class="mono" readonly>${esc(S.ui.exportText)}</textarea></label><button class="btn small" data-act="copyExport">Copiar</button>`:''}</div>`;
   h+=`<p class="small muted" style="text-align:center">Side Quest · versão ${APP_VERSION} · <button class="link small" data-act="newsOpen">Ver novidades</button></p>`;
-  if(S.ui.backupSheet)h+=`<div class="overlay"><div class="sheet" role="dialog" aria-label="Backup pendente"><h2>Faça um backup</h2><p>Você registrou ou mudou coisas depois do último backup. Como os dados ficam só neste celular, vale salvar uma cópia agora.</p><button class="btn gold big" data-act="export">Exportar backup</button><button class="btn wide" data-act="ui" data-k="backupSheet" data-v="">Agora não</button></div></div>`;
+  if(S.ui.backupSheet)h+=`<div class="overlay"><div class="sheet" role="dialog" aria-label="Backup pendente"><h2>Faça um backup</h2><p>Você registrou ou mudou coisas depois do último backup. Como os dados ficam só neste celular, vale salvar uma cópia agora.</p><button class="btn gold big" data-act="export">Exportar backup</button>${canShareFiles()?`<button class="btn wide" data-act="shareBackup">Compartilhar (Drive, WhatsApp, e-mail)</button>`:''}<button class="btn wide" data-act="ui" data-k="backupSheet" data-v="">Agora não</button></div></div>`;
   return bannerMain()+`<main class="app">${h}</main>`;
 }
 function vDeck(){
@@ -1226,8 +1231,10 @@ const A={
   exportCsv:d=>{const rows=csvFor(d.v);const name={partidas:'partidas',matchups:'matchups',eventos:'eventos'}[d.v];offerFile(`side-quest-${name}-${today()}.csv`,toCSV(rows),'Copie e cole numa planilha')},
   exportSel:()=>{const v=(document.getElementById('exp-kind')||{}).value||'partidas';if(v==='resumo')A.copySummary();else A.exportCsv({v})},
   copySummary:async()=>{const t=summaryText();if(!(await copyText(t,'Resumo copiado'))){S.ui.exportText=t;S.ui.exportLabel='Resumo';render()}},
-  export:async()=>{const o={};S.docs.forEach((d,id)=>o[id]=d);const json=JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1);
-    if(await offerFile(`side-quest-backup-${today()}.json`,json,'Copie e guarde este texto')){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}},
+  export:async()=>{if(await offerFile(backupName(),backupJSON(),'Copie e guarde este texto'))backupDone()},
+  shareBackup:async()=>{let f;try{f=new File([backupJSON()],backupName(),{type:'application/json'})}catch(e){return A.export()}
+    if(!(navigator.canShare&&navigator.canShare({files:[f]})))return A.export();
+    try{await navigator.share({files:[f],title:'Backup do Side Quest'});backupDone();toast('Backup enviado')}catch(e){if(!e||e.name!=='AbortError')A.export()}},
   copyExport:async()=>{const t=document.getElementById('exp-text');if(!(await copyText(S.ui.exportText))&&t){t.focus();t.select()}},
   import:()=>document.getElementById('importFile').click(),
   confirmImport:()=>{const imp=S.ui.importData;if(!imp)return;[...S.docs.keys()].forEach(id=>{if(!imp.docs[id])remove(id)});Object.entries(imp.docs).forEach(([id,d])=>write(id,d));lsSet(LS_BACKUP,{at:Date.now()+1,n:imp.n});S.ui={};toast(imp.n+' registros restaurados');render()}
