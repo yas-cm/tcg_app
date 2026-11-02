@@ -1,7 +1,7 @@
 {
- "name": "Diário de Lore",
- "short_name": "Diário de Lore",
- "description": "Contador de lore e diário de partidas de Lorcana",
+ "name": "Side Quest",
+ "short_name": "Side Quest",
+ "description": "Contador e diário de partidas de card game",
  "lang": "pt-BR",
  "start_url": "./",
  "scope": "./",
