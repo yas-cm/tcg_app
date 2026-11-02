@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2E2785">
 <meta name="color-scheme" content="light dark">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest?v=1.1.1">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -296,7 +296,7 @@ const PRIZE_TYPES=[{id:'dinheiro',name:'Dinheiro',real:true},{id:'credito',name:
 const TAGS=['Erro de jogada','Mulligan ruim','Faltou tinta','Tinta demais','Carta fraca','Ideia de troca','Matchup difícil','Sorte / azar'];
 const THEMES=[{id:'floresta',name:'Floresta',sw:'#24654A'},{id:'fliperama',name:'Fliperama',sw:'#3D35A8'},{id:'oceano',name:'Oceano',sw:'#0E6A8C'},{id:'escuro',name:'Escuro',sw:'#131319'}];
 const LORE_GOAL=20;
-const APP_VERSION='1.1';
+const APP_VERSION='1.1.1';
 const STANDALONE=!(window.claude&&window.claude.use);
 const LS_DATA='diario-lore-data-v1',LS_PENDING='diario-lore-pending-v1',LS_LIVE='diario-lore-live-v1',LS_STATS='diario-lore-statsf-v1',LS_THEME='diario-lore-theme-v1',LS_BACKUP='diario-lore-backup-v1',LS_DIRTY='diario-lore-dirty-v1',LS_SEEN='diario-lore-seen-version-v1';
 
@@ -444,11 +444,13 @@ async function connect(){
 function isTyping(){const a=document.activeElement;return a&&(a.tagName==='TEXTAREA'||(a.tagName==='INPUT'&&a.type!=='checkbox'))}
 
 /* ---------- live match ---------- */
-function saveLive(){lsSet(LS_LIVE,S.live)}
+function saveLive(){if(S.live)S.live.at=Date.now();lsSet(LS_LIVE,S.live)}
 function startLive(o){S.live={eventId:o.eventId||null,round:o.round||null,deckId:o.deckId,format:o.format||'md1',games:[],cur:{me:0,opp:0,first:null,hist:[]},phase:'first',end:null};saveLive();S.ui={};go('counter')}
 const gameWins=games=>{let me=0,opp=0;(games||[]).forEach(g=>{if(g.winner==='me')me++;else if(g.winner==='opp')opp++});return{me,opp}};
 function resultOf(games){const w=gameWins(games);return w.me>w.opp?'win':w.opp>w.me?'loss':'draw'}
-function finishMatch(){const L=S.live;L.phase='result';saveLive();S.form={result:resultOf(L.games),oppInks:[],oppName:'',tags:[],notes:''};go('result')}
+/* Formulário da tela de resultado, ligado à partida (para não perder o que já foi marcado ao voltar para ela) */
+function resultForm(L){const f={result:resultOf(L.games),oppInks:[],oppName:'',tags:[],notes:''};Object.defineProperty(f,'_live',{value:L});return f}
+function finishMatch(){const L=S.live;L.phase='result';saveLive();S.form=resultForm(L);go('result')}
 function startQuick(o,games){
   S.quick={eventId:o.eventId||null,round:o.round||null,deckId:o.deckId,format:o.format||'md1',back:o.back||'home'};
   S.form={games:games&&games.length?games.map(g=>({winner:g.winner,first:g.first,me:g.me!=null?String(g.me):'',opp:g.opp!=null?String(g.opp):''})):[{winner:null,first:null,me:'',opp:''}],result:null,resultTouched:false,oppInks:[],oppName:'',tags:[],notes:''};
@@ -497,12 +499,12 @@ function tabsHTML(){
 }
 
 /* ---------- views ---------- */
-const NEWS=[['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
+const NEWS=[['Compartilhar backup','Em Ajustes, mande o backup direto para o Drive, WhatsApp ou e-mail, sem criar um arquivo novo no celular a cada vez.'],['Partida esquecida','Se uma partida ficou aberta há mais de 6 horas, o app abre no início, com a opção de voltar a ela ou descartar.'],['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
 function newsDue(){const seen=lsGet(LS_SEEN,null);if(seen===APP_VERSION)return false;if(!seen&&!S.docs.size){lsSet(LS_SEEN,APP_VERSION);return false}return true}
 function newsOverlay(){return`<div class="overlay news-ov" role="dialog" aria-modal="true" aria-label="Novidades"><div class="newsbox"><span class="eyebrow">Side Quest ${APP_VERSION}</span><h2>Novidades</h2><ul class="news-l">${NEWS.map(n=>`<li><b>${n[0]}</b><span>${n[1]}</span></li>`).join('')}</ul><button class="btn gold big" data-act="newsSeen">Entendi</button></div></div>`}
 function vHome(){
   const ev=openEvent();const L=S.live;let h='';
-  if(L&&L.phase){h+=`<div class="card hero"><span class="eyebrow">Partida em andamento</span><p>${L.eventId?esc(evTitle(getDoc(L.eventId)))+' · Rodada '+L.round:'Partida avulsa'} · ${esc(deckName(L.deckId))}</p><button class="btn gold big" data-act="go" data-v="${L.phase==='result'?'result':'counter'}">Voltar à partida</button></div>`}
+  if(L&&L.phase){h+=`<div class="card hero"><span class="eyebrow">Partida em andamento</span><p>${L.eventId?esc(evTitle(getDoc(L.eventId)))+' · Rodada '+L.round:'Partida avulsa'} · ${esc(deckName(L.deckId))}</p><button class="btn gold big" data-act="resumeLive">Voltar à partida</button>${S.ui.confirmDiscard?`<div class="confirm"><p>Descartar esta partida? Nada será salvo.</p><div class="row"><button class="btn danger" data-act="cancelMatch">Descartar</button><button class="btn" data-act="keepLive">Manter</button></div></div>`:`<button class="link small" data-act="askDiscard" style="align-self:center">Descartar partida</button>`}</div>`}
   if(ev){
     const ms=eventMatches(ev.id),r=record(ms),d=getDoc(ev.deckId);
     const nextRound=ms.length+1;const done=ev.rounds&&ms.length>=ev.rounds;
@@ -1039,6 +1041,11 @@ function vDecks(){
   else{h+='<div class="card"><div class="list">';ds.forEach(d=>{const rr=record(ms.filter(m=>m.deckId===d.id));const p=parseList(d.list);h+=`<button class="item" data-act="openDeck" data-v="${d.id}">${inksHTML(d.inks)}<span class="grow"><span class="t">${esc(d.name)}</span>${d.archived?' <span class="flag">arquivado</span>':''}<br><span class="small muted">${esc(inkNames(d.inks))}${p.cards.length?` · ${p.total} cartas`:' · sem decklist'}</span></span><span class="num" style="text-align:right"><b>${rr.n?pct(rr.w,rr.n)+'%':'–'}</b><br><span class="small muted">${recStr(rr)}</span></span></button>`});h+='</div></div>'}
   return bannerMain()+`<main class="app">${h}</main>`;
 }
+function backupJSON(){const o={};S.docs.forEach((d,id)=>o[id]=d);return JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1)}
+function backupName(){return`side-quest-backup-${today()}.json`}
+function backupDone(){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}
+/* Compartilhar (Drive, WhatsApp, e-mail): só aparece onde o navegador consegue mandar arquivos, como o Chrome no Android */
+function canShareFiles(){try{return STANDALONE&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]})}catch(e){return false}}
 function backupInfo(){const b=lsGet(LS_BACKUP,null);const dirty=lsGet(LS_DIRTY,0)||Math.max(0,...[...S.docs.values()].map(d=>d.created||0));return{b,days:b?Math.floor((Date.now()-b.at)/864e5):null,changed:S.docs.size>0&&(!b||dirty>b.at)}}
 function needsBackup(){return S.mode==='local'&&backupInfo().changed}
 function backupLine(){const i=backupInfo();if(!i.b)return`<p class="${i.changed?'warnline':'small muted'}">Você ainda não fez nenhum backup neste aparelho.</p>`;return`<p class="${i.changed?'warnline':'small muted'}">Último backup: ${i.days===0?'hoje':i.days===1?'ontem':'há '+i.days+' dias'}${i.changed?' · há alterações depois dele':' · tudo salvo'}</p>`}
@@ -1047,11 +1054,11 @@ function vSettings(){
   h+=`<div class="card"><h3>Aparência</h3>
    <div class="swq-row" role="group" aria-label="Tema">${[{id:'',name:'Automático (segue o celular)',bg:'linear-gradient(135deg,#3D35A8 50%,#131319 50%)'},...THEMES.map(t=>({id:t.id,name:t.name,bg:t.sw}))].map(t=>`<button class="swq" data-act="theme" data-v="${t.id}" aria-pressed="${(S.theme||'')===t.id}" aria-label="${t.name}" title="${t.name}" style="background:${t.bg}"></button>`).join('')}</div></div>`;
   h+=`<div class="card"><h3>Backup</h3>${backupLine()}<p class="small muted">${S.mode==='cloud'?'Seus dados ficam salvos na sua conta e neste aparelho. Guarde um backup de vez em quando.':'Seus dados estão só neste aparelho. Exporte um backup para não perder nada.'}</p>
-   <div class="row"><button class="btn ${needsBackup()?'gold':''}" data-act="export">Exportar backup</button><button class="btn" data-act="import">Importar backup</button></div>
+   <div class="row"><button class="btn ${needsBackup()?'gold':''}" data-act="export">Exportar backup</button><button class="btn" data-act="import">Importar backup</button></div>${canShareFiles()?`<button class="btn wide" data-act="shareBackup">Compartilhar backup (Drive, WhatsApp, e-mail)</button>`:''}
    ${S.ui.importData?`<div class="confirm"><p><b>Substituir os dados deste aparelho pelo backup?</b><br><span class="small">O backup tem ${S.ui.importData.n} registros (de ${fmtDate(S.ui.importData.date)||'data desconhecida'}). Tudo o que estiver aqui e não estiver no backup será apagado.</span></p><div class="row"><button class="btn danger" data-act="confirmImport">Substituir</button><button class="btn" data-act="ui" data-k="importData" data-v="">Cancelar</button></div></div>`:''}
    ${S.ui.exportText?`<label class="f">Copie e guarde este texto<textarea id="exp-text" class="mono" readonly>${esc(S.ui.exportText)}</textarea></label><button class="btn small" data-act="copyExport">Copiar</button>`:''}</div>`;
   h+=`<p class="small muted" style="text-align:center">Side Quest · versão ${APP_VERSION} · <button class="link small" data-act="newsOpen">Ver novidades</button></p>`;
-  if(S.ui.backupSheet)h+=`<div class="overlay"><div class="sheet" role="dialog" aria-label="Backup pendente"><h2>Faça um backup</h2><p>Você registrou ou mudou coisas depois do último backup. Como os dados ficam só neste celular, vale salvar uma cópia agora.</p><button class="btn gold big" data-act="export">Exportar backup</button><button class="btn wide" data-act="ui" data-k="backupSheet" data-v="">Agora não</button></div></div>`;
+  if(S.ui.backupSheet)h+=`<div class="overlay"><div class="sheet" role="dialog" aria-label="Backup pendente"><h2>Faça um backup</h2><p>Você registrou ou mudou coisas depois do último backup. Como os dados ficam só neste celular, vale salvar uma cópia agora.</p><button class="btn gold big" data-act="export">Exportar backup</button>${canShareFiles()?`<button class="btn wide" data-act="shareBackup">Compartilhar (Drive, WhatsApp, e-mail)</button>`:''}<button class="btn wide" data-act="ui" data-k="backupSheet" data-v="">Agora não</button></div></div>`;
   return bannerMain()+`<main class="app">${h}</main>`;
 }
 function vDeck(){
@@ -1174,6 +1181,9 @@ const A={
     L.cur={me:0,opp:0,first:null,hist:[]};L.phase='first';saveLive();render()},
   timeEnd:()=>{S.ui.sheet=null;finishMatch()},
   askCancel:()=>{S.ui.confirmCancel=true;render()},
+  askDiscard:()=>{S.ui.confirmDiscard=true;render()},
+  keepLive:()=>{S.ui.confirmDiscard=false;render()},
+  resumeLive:()=>{const L=S.live;if(!L)return;S.ui={};if(L.phase==='result'){if(!(S.form&&S.form._live===L))S.form=resultForm(L);go('result')}else go('counter')},
   cancelMatch:()=>{S.live=null;lsSet(LS_LIVE,null);S.ui={};go('home')},
   backToCounter:()=>{const L=S.live;const g=L.games.pop();L.cur=g?{me:g.me,opp:g.opp,first:g.first,hist:[]}:{me:0,opp:0,first:null,hist:[]};L.phase=g&&g.first?'play':'first';L.end=null;saveLive();go('counter')},
   saveMatch:()=>{const L=S.live,f=S.form;const id=newId('match');
@@ -1223,8 +1233,10 @@ const A={
   exportCsv:d=>{const rows=csvFor(d.v);const name={partidas:'partidas',matchups:'matchups',eventos:'eventos'}[d.v];offerFile(`side-quest-${name}-${today()}.csv`,toCSV(rows),'Copie e cole numa planilha')},
   exportSel:()=>{const v=(document.getElementById('exp-kind')||{}).value||'partidas';if(v==='resumo')A.copySummary();else A.exportCsv({v})},
   copySummary:async()=>{const t=summaryText();if(!(await copyText(t,'Resumo copiado'))){S.ui.exportText=t;S.ui.exportLabel='Resumo';render()}},
-  export:async()=>{const o={};S.docs.forEach((d,id)=>o[id]=d);const json=JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1);
-    if(await offerFile(`side-quest-backup-${today()}.json`,json,'Copie e guarde este texto')){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}},
+  export:async()=>{if(await offerFile(backupName(),backupJSON(),'Copie e guarde este texto'))backupDone()},
+  shareBackup:async()=>{let f;try{f=new File([backupJSON()],backupName(),{type:'application/json'})}catch(e){return A.export()}
+    if(!(navigator.canShare&&navigator.canShare({files:[f]})))return A.export();
+    try{await navigator.share({files:[f],title:'Backup do Side Quest'});backupDone();toast('Backup enviado')}catch(e){if(!e||e.name!=='AbortError')A.export()}},
   copyExport:async()=>{const t=document.getElementById('exp-text');if(!(await copyText(S.ui.exportText))&&t){t.focus();t.select()}},
   import:()=>document.getElementById('importFile').click(),
   confirmImport:()=>{const imp=S.ui.importData;if(!imp)return;[...S.docs.keys()].forEach(id=>{if(!imp.docs[id])remove(id)});Object.entries(imp.docs).forEach(([id,d])=>write(id,d));lsSet(LS_BACKUP,{at:Date.now()+1,n:imp.n});S.ui={};toast(imp.n+' registros restaurados');render()}
@@ -1248,7 +1260,8 @@ document.addEventListener('input',e=>{if(e.target.dataset.f)onField(e)});
 document.addEventListener('change',e=>{onField(e)});
 document.getElementById('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);const docs=o&&o.docs;if(!docs||typeof docs!=='object')throw 0;const ok={};for(const [id,d] of Object.entries(docs)){if(d&&['deck','event','match'].includes(d.kind)&&/^[A-Za-z0-9_\-.~:@+]+$/.test(id))ok[id]=d}const n=Object.keys(ok).length;if(!n)throw 0;S.ui.importData={docs:ok,n,date:(o.exported||'').slice(0,10)};S.ui.backupSheet=false;render()}catch(err){toast('Esse arquivo não é um backup do Side Quest')}e.target.value=''};r.readAsText(file)});
 
-if(S.live&&S.live.phase){if(S.live.phase==='result'){S.view='result';S.form={result:resultOf(S.live.games),oppInks:[],oppName:'',tags:[],notes:''}}else S.view='counter'}
+/* Reabre a partida só se ela mexeu nas últimas 6 horas; senão abre no início, com o card "Partida em andamento" */
+if(S.live&&S.live.phase&&S.live.at&&Date.now()-S.live.at<6*36e5){if(S.live.phase==='result'){S.view='result';S.form=resultForm(S.live)}else S.view='counter'}
 render();
 connect();
 if(S.view==='counter')wakeOn();

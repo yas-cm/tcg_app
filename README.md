@@ -7,7 +7,7 @@
 **Contador e diário de partidas de card game.** Por enquanto, de Disney Lorcana.
 Registre eventos, partidas e prêmios, e descubra contra quais decks você vai bem ou mal.
 
-Funciona sem internet e fica instalado no celular como um app. · Versão 1.1
+Funciona sem internet e fica instalado no celular como um app. · Versão 1.1.1
 
 **[Abrir o app](https://yas-cm.github.io/tcg_app/)**
 
@@ -59,7 +59,7 @@ Funciona sem internet e fica instalado no celular como um app. · Versão 1.1
 ## Seus dados
 
 - Tudo fica salvo **só no seu celular**. Nada é enviado para nenhum servidor.
-- Faça backup em **Ajustes → Exportar backup** depois de cada evento. O app avisa quando faz mais de 7 dias sem backup.
+- Faça backup em **Ajustes → Exportar backup** depois de cada evento. No Android, **Compartilhar backup** manda o arquivo direto para o Drive, WhatsApp ou e-mail. O app avisa quando faz mais de 7 dias sem backup.
 - Para trocar de celular, use **Ajustes → Importar backup**.
 
 ## Como é feito
@@ -75,6 +75,7 @@ Um único arquivo HTML, com CSS e JavaScript puros, sem frameworks e sem servido
 
 ## Versões
 
+- **1.1.1** (02/11/2026): o nome Side Quest aparece ao reinstalar, o app não reabre mais numa partida antiga (o card do início ganhou "Descartar") e o backup pode ser compartilhado.
 - **1.1** (02/11/2026): formatos de evento (Core, Selado, Infinity e Coconut), tipo e nome do evento, modo Selado sem decklist (coleções, boosters, curva de tinta e hits), deck do oponente escolhido do mesmo jeito que o seu, MD1 sem "Jogo 1" e tela de novidades.
 - **1.0** (28/10/2026): primeira versão. Contador de lore, eventos, registro rápido, decklists, estatísticas, exportação e backup.
 
