@@ -13,7 +13,7 @@ self.addEventListener('fetch',e=>{
   if(url.origin!==location.origin)return;
   // Manifesto (nome e ícone do app): sempre tenta a versão nova primeiro
   if(url.pathname.endsWith('/manifest.webmanifest')){
-    e.respondWith(fetch(req,{cache:'no-cache'}).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put('./manifest.webmanifest',copy));return res}).catch(()=>caches.match('./manifest.webmanifest')));return;
+    e.respondWith(fetch(req,{cache:'no-cache'}).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put('./manifest.webmanifest',copy))}return res}).catch(()=>caches.match('./manifest.webmanifest')));return;
   }
   // O app: tenta a versão nova na internet; sem internet, usa a guardada
   if(req.mode==='navigate'||url.pathname.endsWith('/index.html')){

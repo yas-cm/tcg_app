@@ -448,7 +448,9 @@ function saveLive(){if(S.live)S.live.at=Date.now();lsSet(LS_LIVE,S.live)}
 function startLive(o){S.live={eventId:o.eventId||null,round:o.round||null,deckId:o.deckId,format:o.format||'md1',games:[],cur:{me:0,opp:0,first:null,hist:[]},phase:'first',end:null};saveLive();S.ui={};go('counter')}
 const gameWins=games=>{let me=0,opp=0;(games||[]).forEach(g=>{if(g.winner==='me')me++;else if(g.winner==='opp')opp++});return{me,opp}};
 function resultOf(games){const w=gameWins(games);return w.me>w.opp?'win':w.opp>w.me?'loss':'draw'}
-function finishMatch(){const L=S.live;L.phase='result';saveLive();S.form={result:resultOf(L.games),oppInks:[],oppName:'',tags:[],notes:''};go('result')}
+/* Formulário da tela de resultado, ligado à partida (para não perder o que já foi marcado ao voltar para ela) */
+function resultForm(L){const f={result:resultOf(L.games),oppInks:[],oppName:'',tags:[],notes:''};Object.defineProperty(f,'_live',{value:L});return f}
+function finishMatch(){const L=S.live;L.phase='result';saveLive();S.form=resultForm(L);go('result')}
 function startQuick(o,games){
   S.quick={eventId:o.eventId||null,round:o.round||null,deckId:o.deckId,format:o.format||'md1',back:o.back||'home'};
   S.form={games:games&&games.length?games.map(g=>({winner:g.winner,first:g.first,me:g.me!=null?String(g.me):'',opp:g.opp!=null?String(g.opp):''})):[{winner:null,first:null,me:'',opp:''}],result:null,resultTouched:false,oppInks:[],oppName:'',tags:[],notes:''};
@@ -1181,7 +1183,7 @@ const A={
   askCancel:()=>{S.ui.confirmCancel=true;render()},
   askDiscard:()=>{S.ui.confirmDiscard=true;render()},
   keepLive:()=>{S.ui.confirmDiscard=false;render()},
-  resumeLive:()=>{const L=S.live;if(!L)return;S.ui={};if(L.phase==='result'){S.form={result:resultOf(L.games),oppInks:[],oppName:'',tags:[],notes:''};go('result')}else go('counter')},
+  resumeLive:()=>{const L=S.live;if(!L)return;S.ui={};if(L.phase==='result'){if(!(S.form&&S.form._live===L))S.form=resultForm(L);go('result')}else go('counter')},
   cancelMatch:()=>{S.live=null;lsSet(LS_LIVE,null);S.ui={};go('home')},
   backToCounter:()=>{const L=S.live;const g=L.games.pop();L.cur=g?{me:g.me,opp:g.opp,first:g.first,hist:[]}:{me:0,opp:0,first:null,hist:[]};L.phase=g&&g.first?'play':'first';L.end=null;saveLive();go('counter')},
   saveMatch:()=>{const L=S.live,f=S.form;const id=newId('match');
@@ -1259,7 +1261,7 @@ document.addEventListener('change',e=>{onField(e)});
 document.getElementById('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);const docs=o&&o.docs;if(!docs||typeof docs!=='object')throw 0;const ok={};for(const [id,d] of Object.entries(docs)){if(d&&['deck','event','match'].includes(d.kind)&&/^[A-Za-z0-9_\-.~:@+]+$/.test(id))ok[id]=d}const n=Object.keys(ok).length;if(!n)throw 0;S.ui.importData={docs:ok,n,date:(o.exported||'').slice(0,10)};S.ui.backupSheet=false;render()}catch(err){toast('Esse arquivo não é um backup do Side Quest')}e.target.value=''};r.readAsText(file)});
 
 /* Reabre a partida só se ela mexeu nas últimas 6 horas; senão abre no início, com o card "Partida em andamento" */
-if(S.live&&S.live.phase&&S.live.at&&Date.now()-S.live.at<6*36e5){if(S.live.phase==='result'){S.view='result';S.form={result:resultOf(S.live.games),oppInks:[],oppName:'',tags:[],notes:''}}else S.view='counter'}
+if(S.live&&S.live.phase&&S.live.at&&Date.now()-S.live.at<6*36e5){if(S.live.phase==='result'){S.view='result';S.form=resultForm(S.live)}else S.view='counter'}
 render();
 connect();
 if(S.view==='counter')wakeOn();
