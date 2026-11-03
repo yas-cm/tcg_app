@@ -118,6 +118,7 @@ textarea.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-s
 .inkbtn .seal{width:42px;height:42px}
 .inkbtn[aria-pressed="true"]{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);background:var(--soft)}
 .inkbtn:disabled{opacity:.35}
+.sugg{gap:6px}.sugg:empty{display:none}.sugg .chip{min-height:36px;font-size:.85rem;font-weight:500}
 .deckopt{display:flex;align-items:center;gap:10px;width:100%;padding:12px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);text-align:left;font-weight:600}
 .deckopt[aria-pressed="true"]{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);background:var(--soft)}
 .res{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:var(--r);font-weight:700;font-size:.8rem;color:#fff;font-family:var(--font-display)}
@@ -275,7 +276,7 @@ button.srow{cursor:pointer}
 
 <div id="root"></div>
 <div id="toast" class="toast" hidden></div>
-<input type="file" id="importFile" accept=".json,application/json" hidden>
+<input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" hidden>
 
 <script>
 (function(){
@@ -553,16 +554,22 @@ function inkPicker(field,arr){
 }
 function segHTML(field,opts){const v=getPath(S.form,field);return`<div class="seg" role="group">${opts.map(o=>`<button type="button" class="chip" data-act="setF" data-f="${field}" data-v="${o.id}" aria-pressed="${v===o.id}">${o.name}</button>`).join('')}</div>`}
 
+/* Sugestões em botões: no Chrome do Android a lista (datalist) mostra a setinha mas não abre */
+const SUGG={};
+function suggHTML(field,names,onlyTyping){SUGG[field]={names,onlyTyping};return`<div class="seg sugg" id="sg-${field}" aria-label="Sugestões">${suggChips(field)}</div>`}
+function suggChips(field){const g=SUGG[field];if(!g)return'';const v=String(getPath(S.form,field)||'').trim().toLowerCase();if(g.onlyTyping&&!v)return'';
+  const exact=g.names.some(n=>n.toLowerCase()===v);
+  return g.names.filter(n=>{const l=n.toLowerCase();return l!==v&&(!v||exact||l.includes(v))}).slice(0,6).map(n=>`<button type="button" class="chip" data-act="pickSugg" data-f="${field}" data-v="${esc(n)}">${esc(n)}</button>`).join('')}
 function eventHeadHTML(p){
   const f=S.form;
   const names=eventNames().slice(0,40);
   const stores=[...new Set(events().map(e=>(e.store||'').trim()).filter(Boolean))].slice(0,40);
   return`<div class="f"><span>Formato</span>${segHTML('mode',MODES).replace('class="seg"','class="seg grid2x"')}</div>
-    <label class="f">Tipo do evento<span class="hint">Agrupa nas estatísticas.</span><input type="text" id="${p}-name" data-f="name" list="${p}-names" value="${esc(f.name)}" placeholder="${esc('Se ficar vazio: '+defaultName(f))}" autocomplete="off"></label>
+    <label class="f">Tipo do evento<span class="hint">Agrupa nas estatísticas.</span><input type="text" id="${p}-name" data-f="name" value="${esc(f.name)}" placeholder="${esc('Se ficar vazio: '+defaultName(f))}" autocomplete="off"></label>
     ${f.titleOn?`<div class="f"><label class="f">Nome<span class="hint">Opcional. Aparece no lugar do tipo no histórico.</span><input type="text" id="${p}-title" data-f="title" value="${esc(f.title||'')}" autocomplete="off"></label><button type="button" class="link small" data-act="titleOff" style="align-self:flex-start">Tirar o nome</button></div>`:`<button type="button" class="link small" data-act="titleOn" style="align-self:flex-start">+ Nome</button>`}
-    <datalist id="${p}-names">${names.map(n=>`<option value="${esc(n.name)}">`).join('')}</datalist>
-    <label class="f">Local<span class="hint">Loja ou competição. Opcional.</span><input type="text" id="${p}-store" data-f="store" list="${p}-stores" value="${esc(f.store)}" placeholder="Ex.: Loja X, DLC São Paulo" autocomplete="off"></label>
-    <datalist id="${p}-stores">${stores.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`;
+    ${suggHTML('name',names.map(n=>n.name))}
+    <label class="f">Local<span class="hint">Loja ou competição. Opcional.</span><input type="text" id="${p}-store" data-f="store" value="${esc(f.store)}" placeholder="Ex.: Loja X, DLC São Paulo" autocomplete="off"></label>
+    ${suggHTML('store',stores)}`;
 }
 function limCardHTML(p){
   const f=S.form;if(!LIM_MODES.includes(f.mode))return'';
@@ -687,14 +694,14 @@ function matchFormHTML(withResult){
   return`${lim?'':`<div class="card"><h3>Deck do oponente</h3>
     <div class="stack" role="group" aria-label="Deck do oponente">
     ${sugg.map(k=>`<button type="button" class="deckopt" data-act="pickOpp" data-v="${esc(k.name)}" aria-pressed="${f.oppName===k.name}">${inksHTML(k.inks)}<span>${esc(k.name)}</span></button>`).join('')}
-    ${open?`<div class="gamebox"><label class="f">Nome do deck<span class="hint">Opcional. Ex.: Steel Songs</span><input type="text" id="m-oppname" data-f="oppName" list="opp-names" value="${esc(f.oppName)}" autocomplete="off"></label>
-     <datalist id="opp-names">${allNames.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+    ${open?`<div class="gamebox"><label class="f">Nome do deck<span class="hint">Opcional. Ex.: Steel Songs</span><input type="text" id="m-oppname" data-f="oppName" value="${esc(f.oppName)}" autocomplete="off"></label>${suggHTML('oppName',allNames,true)}
+     
      <div class="f"><span>Cores (até 2)</span>${inkPicker('oppInks',f.oppInks)}</div>
      ${known.length?'<div class="row"><button type="button" class="btn" data-act="oppCancel">Cancelar</button></div>':''}</div>`:`<button type="button" class="btn wide" data-act="oppNew">+ Outro deck</button>`}
     </div>
     ${vsBox(key)}
    </div>`}
-   <div class="card"><label class="f">Nome do oponente<span class="hint">Opcional.</span><input type="text" id="m-oppplayer" data-f="oppPlayer" list="opp-players" value="${esc(f.oppPlayer||'')}" placeholder="Nome ou nick" autocomplete="off"></label><datalist id="opp-players">${players.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+   <div class="card"><label class="f">Nome do oponente<span class="hint">Opcional.</span><input type="text" id="m-oppplayer" data-f="oppPlayer" value="${esc(f.oppPlayer||'')}" placeholder="Nome ou nick" autocomplete="off"></label>${suggHTML('oppPlayer',players)}</div>
    ${withResult===false?'':`<div class="card"><h3>Resultado da partida</h3>${segHTML('result',[{id:'win',name:'Vitória'},{id:'loss',name:'Derrota'},{id:'draw',name:'Empate'}])}</div>`}
    <div class="card"><h3>Notas</h3><div class="seg">${allTags(f.tags).map(t=>`<button type="button" class="chip" data-act="toggleTag" data-v="${esc(t)}" aria-pressed="${(f.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="addtag"><input type="text" id="m-newtag" data-f="newTag" value="${esc(f.newTag||'')}" placeholder="Nova etiqueta" maxlength="40" aria-label="Nova etiqueta"><button type="button" class="btn small" data-act="addTag">Adicionar</button></div>
@@ -1044,8 +1051,9 @@ function vDecks(){
 function backupJSON(){const o={};S.docs.forEach((d,id)=>o[id]=d);return JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1)}
 function backupName(){return`side-quest-backup-${today()}.json`}
 function backupDone(){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}
-/* Compartilhar (Drive, WhatsApp, e-mail): só aparece onde o navegador consegue mandar arquivos, como o Chrome no Android */
-function canShareFiles(){try{return STANDALONE&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]})}catch(e){return false}}
+/* Compartilhar (Drive, WhatsApp, e-mail): só aparece onde o navegador consegue mandar arquivos, como o Chrome no Android.
+   Vai como .txt porque o Chrome não deixa compartilhar .json; o conteúdo é o mesmo e o Importar aceita os dois. */
+function canShareFiles(){try{return STANDALONE&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.txt',{type:'text/plain'})]})}catch(e){return false}}
 function backupInfo(){const b=lsGet(LS_BACKUP,null);const dirty=lsGet(LS_DIRTY,0)||Math.max(0,...[...S.docs.values()].map(d=>d.created||0));return{b,days:b?Math.floor((Date.now()-b.at)/864e5):null,changed:S.docs.size>0&&(!b||dirty>b.at)}}
 function needsBackup(){return S.mode==='local'&&backupInfo().changed}
 function backupLine(){const i=backupInfo();if(!i.b)return`<p class="${i.changed?'warnline':'small muted'}">Você ainda não fez nenhum backup neste aparelho.</p>`;return`<p class="${i.changed?'warnline':'small muted'}">Último backup: ${i.days===0?'hoje':i.days===1?'ontem':'há '+i.days+' dias'}${i.changed?' · há alterações depois dele':' · tudo salvo'}</p>`}
@@ -1181,6 +1189,7 @@ const A={
     L.cur={me:0,opp:0,first:null,hist:[]};L.phase='first';saveLive();render()},
   timeEnd:()=>{S.ui.sheet=null;finishMatch()},
   askCancel:()=>{S.ui.confirmCancel=true;render()},
+  pickSugg:d=>{const i=document.querySelector(`input[data-f="${d.f}"]`);if(!i)return;i.value=d.v;i.dispatchEvent(new Event('input',{bubbles:true}));if(document.body.contains(i))i.dispatchEvent(new Event('change',{bubbles:true}))},
   askDiscard:()=>{S.ui.confirmDiscard=true;render()},
   keepLive:()=>{S.ui.confirmDiscard=false;render()},
   resumeLive:()=>{const L=S.live;if(!L)return;S.ui={};if(L.phase==='result'){if(!(S.form&&S.form._live===L))S.form=resultForm(L);go('result')}else go('counter')},
@@ -1234,9 +1243,9 @@ const A={
   exportSel:()=>{const v=(document.getElementById('exp-kind')||{}).value||'partidas';if(v==='resumo')A.copySummary();else A.exportCsv({v})},
   copySummary:async()=>{const t=summaryText();if(!(await copyText(t,'Resumo copiado'))){S.ui.exportText=t;S.ui.exportLabel='Resumo';render()}},
   export:async()=>{if(await offerFile(backupName(),backupJSON(),'Copie e guarde este texto'))backupDone()},
-  shareBackup:async()=>{let f;try{f=new File([backupJSON()],backupName(),{type:'application/json'})}catch(e){return A.export()}
+  shareBackup:async()=>{let f;try{f=new File([backupJSON()],backupName().replace(/\.json$/,'.txt'),{type:'text/plain'})}catch(e){return A.export()}
     if(!(navigator.canShare&&navigator.canShare({files:[f]})))return A.export();
-    try{await navigator.share({files:[f],title:'Backup do Side Quest'});backupDone();toast('Backup enviado')}catch(e){if(!e||e.name!=='AbortError')A.export()}},
+    try{await navigator.share({files:[f],title:'Backup do Side Quest'});backupDone();toast('Backup enviado')}catch(e){if(!e||e.name!=='AbortError'){toast('Não deu para compartilhar, então o backup foi baixado');A.export()}}},
   copyExport:async()=>{const t=document.getElementById('exp-text');if(!(await copyText(S.ui.exportText))&&t){t.focus();t.select()}},
   import:()=>document.getElementById('importFile').click(),
   confirmImport:()=>{const imp=S.ui.importData;if(!imp)return;[...S.docs.keys()].forEach(id=>{if(!imp.docs[id])remove(id)});Object.entries(imp.docs).forEach(([id,d])=>write(id,d));lsSet(LS_BACKUP,{at:Date.now()+1,n:imp.n});S.ui={};toast(imp.n+' registros restaurados');render()}
@@ -1251,6 +1260,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
 document.addEventListener('submit',e=>{const f=e.target.closest('form[data-act-submit]');if(!f)return;e.preventDefault();const fn=A[f.dataset.actSubmit];if(fn)fn({})});
 function onField(e){const el=e.target;
   if(el.dataset.f){const v=el.type==='checkbox'?el.checked:el.value;setPath(S.form,el.dataset.f,v);
+    if(e.type==='input'){const sg=document.getElementById('sg-'+el.dataset.f);if(sg)sg.innerHTML=suggChips(el.dataset.f)}
     if(el.dataset.f==='list'){const c=document.getElementById('dl-check');if(c)c.innerHTML=listCheck(parseList(v))}
     if(/^curve\.\d+$/.test(el.dataset.f)){const c=document.getElementById('curve-prev');if(c)c.innerHTML=curvePrevHTML(cleanCurve(S.form.curve))}
     if(el.dataset.f==='oppName'&&(e.type==='change'||e.inputType==='insertReplacementText'||(e.type==='input'&&!e.inputType))){const hit=inksForName(v);if(hit){const ch=inkKey(hit.inks)!==inkKey(S.form.oppInks);S.form.oppName=hit.name;S.form.oppInks=[...hit.inks];if(ch){render();toast('Cores de '+hit.name+' preenchidas')}}}}
