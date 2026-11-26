@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2E2785">
 <meta name="color-scheme" content="light dark">
-<link rel="manifest" href="manifest.webmanifest?v=1.1.1">
+<link rel="manifest" href="manifest.webmanifest?v=1.1.2">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -118,6 +118,7 @@ textarea.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-s
 .inkbtn .seal{width:42px;height:42px}
 .inkbtn[aria-pressed="true"]{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);background:var(--soft)}
 .inkbtn:disabled{opacity:.35}
+.sugg{gap:6px}.sugg:empty{display:none}.sugg .chip{min-height:36px;font-size:.85rem;font-weight:500}
 .deckopt{display:flex;align-items:center;gap:10px;width:100%;padding:12px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);text-align:left;font-weight:600}
 .deckopt[aria-pressed="true"]{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);background:var(--soft)}
 .res{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:var(--r);font-weight:700;font-size:.8rem;color:#fff;font-family:var(--font-display)}
@@ -275,7 +276,7 @@ button.srow{cursor:pointer}
 
 <div id="root"></div>
 <div id="toast" class="toast" hidden></div>
-<input type="file" id="importFile" accept=".json,application/json" hidden>
+<input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" hidden>
 
 <script>
 (function(){
@@ -296,7 +297,7 @@ const PRIZE_TYPES=[{id:'dinheiro',name:'Dinheiro',real:true},{id:'credito',name:
 const TAGS=['Erro de jogada','Mulligan ruim','Faltou tinta','Tinta demais','Carta fraca','Ideia de troca','Matchup difícil','Sorte / azar'];
 const THEMES=[{id:'floresta',name:'Floresta',sw:'#24654A'},{id:'fliperama',name:'Fliperama',sw:'#3D35A8'},{id:'oceano',name:'Oceano',sw:'#0E6A8C'},{id:'escuro',name:'Escuro',sw:'#131319'}];
 const LORE_GOAL=20;
-const APP_VERSION='1.1.1';
+const APP_VERSION='1.1.2';
 const STANDALONE=!(window.claude&&window.claude.use);
 const LS_DATA='diario-lore-data-v1',LS_PENDING='diario-lore-pending-v1',LS_LIVE='diario-lore-live-v1',LS_STATS='diario-lore-statsf-v1',LS_THEME='diario-lore-theme-v1',LS_BACKUP='diario-lore-backup-v1',LS_DIRTY='diario-lore-dirty-v1',LS_SEEN='diario-lore-seen-version-v1';
 
@@ -499,7 +500,7 @@ function tabsHTML(){
 }
 
 /* ---------- views ---------- */
-const NEWS=[['Compartilhar backup','Em Ajustes, mande o backup direto para o Drive, WhatsApp ou e-mail, sem criar um arquivo novo no celular a cada vez.'],['Partida esquecida','Se uma partida ficou aberta há mais de 6 horas, o app abre no início, com a opção de voltar a ela ou descartar.'],['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
+const NEWS=[['Sugestões em botões','Tipo do evento, local, deck e nome do oponente agora mostram sugestões em botões, que funcionam no Android.'],['Backup em .txt','O backup compartilhado vai como .txt para o Drive e o WhatsApp aceitarem. O Importar aceita .txt e .json.'],['Compartilhar backup','Em Ajustes, mande o backup direto para o Drive, WhatsApp ou e-mail, sem criar um arquivo novo no celular a cada vez.'],['Partida esquecida','Se uma partida ficou aberta há mais de 6 horas, o app abre no início, com a opção de voltar a ela ou descartar.'],['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
 function newsDue(){const seen=lsGet(LS_SEEN,null);if(seen===APP_VERSION)return false;if(!seen&&!S.docs.size){lsSet(LS_SEEN,APP_VERSION);return false}return true}
 function newsOverlay(){return`<div class="overlay news-ov" role="dialog" aria-modal="true" aria-label="Novidades"><div class="newsbox"><span class="eyebrow">Side Quest ${APP_VERSION}</span><h2>Novidades</h2><ul class="news-l">${NEWS.map(n=>`<li><b>${n[0]}</b><span>${n[1]}</span></li>`).join('')}</ul><button class="btn gold big" data-act="newsSeen">Entendi</button></div></div>`}
 function vHome(){
@@ -540,7 +541,7 @@ function deckPicker(field,allowNew){
   ds.forEach(d=>{h+=`<button type="button" class="deckopt" data-act="pickDeck" data-f="${field}" data-v="${d.id}" aria-pressed="${sel===d.id}">${inksHTML(d.inks)}<span>${esc(d.name)}</span></button>`});
   /* decks you only logged as an opponent are offered too; picking one creates it as your deck when you start */
   const mine=new Set(decks().map(d=>d.name.trim().toLowerCase()));
-  knownOpps().filter(k=>!mine.has(k.name.toLowerCase())).slice(0,8).forEach(k=>{const v='opp:'+k.name;h+=`<button type="button" class="deckopt" data-act="pickDeck" data-f="${field}" data-v="${esc(v)}" aria-pressed="${sel===v}">${inksHTML(k.inks)}<span>${esc(k.name)}</span></button>`});
+  const opps=knownOpps().filter(k=>!mine.has(k.name.toLowerCase())).slice(0,8);if(opps.length)h+=`<p class="hint" style="margin-top:4px">Decks que você já enfrentou. Ao escolher um, ele vira um deck seu.</p>`;opps.forEach(k=>{const v='opp:'+k.name;h+=`<button type="button" class="deckopt" data-act="pickDeck" data-f="${field}" data-v="${esc(v)}" aria-pressed="${sel===v}">${inksHTML(k.inks)}<span>${esc(k.name)}</span></button>`});
   if(allowNew){
     if(S.form.nd){h+=`<div class="gamebox"><label class="f">Nome do novo deck<input type="text" id="nd-name" data-f="nd.name" value="${esc(S.form.nd.name)}" placeholder="Ex.: Amber Steel Songs"></label><div class="f"><span>Cores (até 2)</span>${inkPicker('nd.inks',S.form.nd.inks)}</div><p class="hint">A decklist você adiciona depois, na aba Decks.</p><div class="row"><button type="button" class="btn primary" data-act="saveNewDeck" data-f="${field}">Criar deck</button>${ds.length?'<button type="button" class="btn" data-act="cancelNewDeck">Cancelar</button>':''}</div></div>`}
     else h+=`<button type="button" class="btn wide" data-act="showNewDeck">+ Novo deck</button>`;
@@ -553,16 +554,22 @@ function inkPicker(field,arr){
 }
 function segHTML(field,opts){const v=getPath(S.form,field);return`<div class="seg" role="group">${opts.map(o=>`<button type="button" class="chip" data-act="setF" data-f="${field}" data-v="${o.id}" aria-pressed="${v===o.id}">${o.name}</button>`).join('')}</div>`}
 
+/* Sugestões em botões: no Chrome do Android a lista (datalist) mostra a setinha mas não abre */
+const SUGG={};
+function suggHTML(field,names,onlyTyping){SUGG[field]={names,onlyTyping};return`<div class="seg sugg" id="sg-${field}" aria-label="Sugestões">${suggChips(field)}</div>`}
+function suggChips(field){const g=SUGG[field];if(!g)return'';const v=String(getPath(S.form,field)||'').trim().toLowerCase();if(g.onlyTyping&&!v)return'';
+  const exact=g.names.some(n=>n.toLowerCase()===v);
+  return g.names.filter(n=>{const l=n.toLowerCase();return l!==v&&(!v||exact||l.includes(v))}).slice(0,6).map(n=>`<button type="button" class="chip" data-act="pickSugg" data-f="${field}" data-v="${esc(n)}">${esc(n)}</button>`).join('')}
 function eventHeadHTML(p){
   const f=S.form;
   const names=eventNames().slice(0,40);
   const stores=[...new Set(events().map(e=>(e.store||'').trim()).filter(Boolean))].slice(0,40);
   return`<div class="f"><span>Formato</span>${segHTML('mode',MODES).replace('class="seg"','class="seg grid2x"')}</div>
-    <label class="f">Tipo do evento<span class="hint">Agrupa nas estatísticas.</span><input type="text" id="${p}-name" data-f="name" list="${p}-names" value="${esc(f.name)}" placeholder="${esc('Se ficar vazio: '+defaultName(f))}" autocomplete="off"></label>
+    <label class="f">Tipo do evento<span class="hint">Agrupa nas estatísticas.</span><input type="text" id="${p}-name" data-f="name" value="${esc(f.name)}" placeholder="${esc('Se ficar vazio: '+defaultName(f))}" autocomplete="off"></label>
     ${f.titleOn?`<div class="f"><label class="f">Nome<span class="hint">Opcional. Aparece no lugar do tipo no histórico.</span><input type="text" id="${p}-title" data-f="title" value="${esc(f.title||'')}" autocomplete="off"></label><button type="button" class="link small" data-act="titleOff" style="align-self:flex-start">Tirar o nome</button></div>`:`<button type="button" class="link small" data-act="titleOn" style="align-self:flex-start">+ Nome</button>`}
-    <datalist id="${p}-names">${names.map(n=>`<option value="${esc(n.name)}">`).join('')}</datalist>
-    <label class="f">Local<span class="hint">Loja ou competição. Opcional.</span><input type="text" id="${p}-store" data-f="store" list="${p}-stores" value="${esc(f.store)}" placeholder="Ex.: Loja X, DLC São Paulo" autocomplete="off"></label>
-    <datalist id="${p}-stores">${stores.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`;
+    ${suggHTML('name',names.map(n=>n.name))}
+    <label class="f">Local<span class="hint">Loja ou competição. Opcional.</span><input type="text" id="${p}-store" data-f="store" value="${esc(f.store)}" placeholder="Ex.: Loja X, DLC São Paulo" autocomplete="off"></label>
+    ${suggHTML('store',stores)}`;
 }
 function limCardHTML(p){
   const f=S.form;if(!LIM_MODES.includes(f.mode))return'';
@@ -687,14 +694,14 @@ function matchFormHTML(withResult){
   return`${lim?'':`<div class="card"><h3>Deck do oponente</h3>
     <div class="stack" role="group" aria-label="Deck do oponente">
     ${sugg.map(k=>`<button type="button" class="deckopt" data-act="pickOpp" data-v="${esc(k.name)}" aria-pressed="${f.oppName===k.name}">${inksHTML(k.inks)}<span>${esc(k.name)}</span></button>`).join('')}
-    ${open?`<div class="gamebox"><label class="f">Nome do deck<span class="hint">Opcional. Ex.: Steel Songs</span><input type="text" id="m-oppname" data-f="oppName" list="opp-names" value="${esc(f.oppName)}" autocomplete="off"></label>
-     <datalist id="opp-names">${allNames.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+    ${open?`<div class="gamebox"><label class="f">Nome do deck<span class="hint">Opcional. Ex.: Steel Songs</span><input type="text" id="m-oppname" data-f="oppName" value="${esc(f.oppName)}" autocomplete="off"></label>${suggHTML('oppName',allNames,true)}
+     
      <div class="f"><span>Cores (até 2)</span>${inkPicker('oppInks',f.oppInks)}</div>
      ${known.length?'<div class="row"><button type="button" class="btn" data-act="oppCancel">Cancelar</button></div>':''}</div>`:`<button type="button" class="btn wide" data-act="oppNew">+ Outro deck</button>`}
     </div>
     ${vsBox(key)}
    </div>`}
-   <div class="card"><label class="f">Nome do oponente<span class="hint">Opcional.</span><input type="text" id="m-oppplayer" data-f="oppPlayer" list="opp-players" value="${esc(f.oppPlayer||'')}" placeholder="Nome ou nick" autocomplete="off"></label><datalist id="opp-players">${players.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+   <div class="card"><label class="f">Nome do oponente<span class="hint">Opcional.</span><input type="text" id="m-oppplayer" data-f="oppPlayer" value="${esc(f.oppPlayer||'')}" placeholder="Nome ou nick" autocomplete="off"></label>${suggHTML('oppPlayer',players)}</div>
    ${withResult===false?'':`<div class="card"><h3>Resultado da partida</h3>${segHTML('result',[{id:'win',name:'Vitória'},{id:'loss',name:'Derrota'},{id:'draw',name:'Empate'}])}</div>`}
    <div class="card"><h3>Notas</h3><div class="seg">${allTags(f.tags).map(t=>`<button type="button" class="chip" data-act="toggleTag" data-v="${esc(t)}" aria-pressed="${(f.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="addtag"><input type="text" id="m-newtag" data-f="newTag" value="${esc(f.newTag||'')}" placeholder="Nova etiqueta" maxlength="40" aria-label="Nova etiqueta"><button type="button" class="btn small" data-act="addTag">Adicionar</button></div>
@@ -754,6 +761,7 @@ function vEventEdit(){
    </div>
    ${LIM_MODES.includes(f.mode)?'':`<div class="card"><h3>Deck usado</h3>${deckPicker('deckId',false)}<p class="hint">Se trocar o deck, as partidas deste evento passam para o deck novo.</p></div>`}
    ${S.ui.err?`<p class="neg small" role="alert">${esc(S.ui.err)}</p>`:''}
+   ${S.ui.modeWarn?`<div class="confirm" id="mode-warn" role="alert"><p><b>Trocar o formato?</b><br><span class="small">${esc(S.ui.modeWarn)}</span></p><div class="row"><button class="btn danger" data-act="modeConfirm">Trocar e salvar</button><button class="btn" data-act="modeKeep">Voltar ao formato anterior</button></div></div>`:''}
    <button class="btn gold big" data-act="saveEventInfo">Salvar</button></div></main>`;
 }
 function vCloseEvent(){
@@ -772,9 +780,10 @@ function vCloseEvent(){
 }
 
 function vHistory(){
-  const hm=S.histMode||'all';const allEvs=events();
-  const evs=allEvs.filter(e=>hm==='all'||modeOf(e)===hm),cas=hm!=='all'?[]:matches().filter(m=>!m.eventId).reverse();
+  let hm=S.histMode||'all';const allEvs=events();
   const modesIn=MODES.filter(m=>allEvs.some(e=>modeOf(e)===m.id));
+  if(hm!=='all'&&(modesIn.length<2||!modesIn.some(m=>m.id===hm)))hm=S.histMode='all';
+  const evs=allEvs.filter(e=>hm==='all'||modeOf(e)===hm),cas=hm!=='all'?[]:matches().filter(m=>!m.eventId).reverse();
   let h='<h2>Histórico</h2>';
   if(modesIn.length>1)h+=`<div class="seg" role="group" aria-label="Formato">${[{id:'all',name:'Tudo'},...modesIn].map(o=>`<button class="chip" data-act="histMode" data-v="${o.id}" aria-pressed="${hm===o.id}">${o.name}</button>`).join('')}</div>`;
   if(!evs.length&&!cas.length)h+='<div class="card empty"><p class="muted">Nenhum evento ainda. Comece um na aba Início.</p></div>';
@@ -876,7 +885,7 @@ function limCard(L){
    <div class="mrow"><span></span><span>Prêmios em dinheiro e crédito</span><span class="money pos">${brl(L.real)}</span></div>
    <div class="mrow"><span></span><b>Saldo real</b><span class="money ${L.real-L.fee>=0?'pos':'neg'}">${brl(L.real-L.fee)}</span></div>
    ${L.est?`<div class="mrow"><span></span><span>Boosters e cartas ganhos (estimado)</span><span class="money">${brl(L.est)}</span></div>`:''}`;
-  if(L.byName.length>1)h+=`<p class="eyebrow" style="margin-top:4px">Por evento</p><div>${L.byName.map(x=>srow({title:esc(x.k),n:x.r.n,r:x.r,sub:[recStr(x.r)]})).join('')}</div>`;
+  if(L.byName.length>1)h+=`<p class="eyebrow" style="margin-top:4px">Por tipo de evento</p><div>${L.byName.map(x=>srow({title:esc(x.k),n:x.r.n,r:x.r,sub:[recStr(x.r)]})).join('')}</div>`;
   if(L.bySet.length)h+=`<p class="eyebrow" style="margin-top:4px">Por coleção</p><div>${L.bySet.map(x=>srow({title:esc(x.k),n:x.r.n,r:x.r,sub:[recStr(x.r)]})).join('')}</div>`;
   h+='</div>';
   if(L.hits.length){const top=L.hits.slice().sort((a,b)=>num(b.value)-num(a.value)||(b.ev.date||'').localeCompare(a.ev.date||'')).slice(0,8);
@@ -961,7 +970,7 @@ function vStats(){
   const sel=(k,opts,lab)=>`<label class="f"><span class="hint">${lab}</span><select id="sf-${k}" data-sf="${k}">${opts.map(o=>`<option value="${esc(o.id)}" ${F[k]===o.id?'selected':''}>${esc(o.name)}</option>`).join('')}</select></label>`;
   const periods=[{id:'all',name:'Todo o período'},{id:'30',name:'Últimos 30 dias'},{id:'90',name:'Últimos 90 dias'},{id:'365',name:'Último ano'}];
   if(dk&&dk.listUpdated)periods.push({id:'deckver',name:'Desde a última mudança do deck'});
-  let h=`<h2>Estatísticas</h2><div class="card">${sel('deck',[{id:'all',name:'Todos os decks'},...ds.map(d=>({id:d.id,name:d.name+(d.archived?' (arquivado)':'')}))],'Deck')}<div class="filters">${sel('period',periods,'Período')}${F.deck==='all'?sel('mode',[{id:'all',name:'Todos os formatos'},...MODES],'Formato'):''}${sel('type',[{id:'all',name:'Todos os eventos'},...eventNames(),{id:'casual',name:'Partidas avulsas'}],'Evento')}</div></div>`;
+  let h=`<h2>Estatísticas</h2><div class="card">${sel('deck',[{id:'all',name:'Todos os decks'},...ds.map(d=>({id:d.id,name:d.name+(d.archived?' (arquivado)':'')}))],'Deck')}<div class="filters">${sel('period',periods,'Período')}${sel('mode',[{id:'all',name:'Todos os formatos'},...MODES.filter(m=>F.deck==='all'||!LIM_MODES.includes(m.id))],'Formato')}${sel('type',[{id:'all',name:'Todos os tipos'},...eventNames(),{id:'casual',name:'Partidas avulsas'}],'Tipo do evento')}</div></div>`;
   if(!D.ms.length&&!D.evs.length)return bannerMain()+`<main class="app">${h}<div class="card empty"><p class="muted">Sem partidas com esses filtros.</p></div></main>`;
   const small=n=>n<5?'<span class="flag">poucos jogos</span>':'';
   const r=D.r;
@@ -975,7 +984,7 @@ function vStats(){
   h+='</div><p class="hint">Toque num matchup para ver as partidas e todas as notas contra ele.</p></div>';
   h+=matrixCard(D);
   if(F.deck==='all'){h+='<div class="card"><h3>Por deck</h3><div>';D.byDeck.forEach(x=>{h+=srow({icon:x.lim?'<span class="limtag">Selado</span>':x.deck?inksHTML(x.deck.inks):'',title:esc(x.lim?'Decks selados':x.deck?x.deck.name:'Deck removido'),n:x.r.n,r:x.r,sub:[recStr(x.r),`${x.r.n} partida${x.r.n>1?'s':''}`]})});h+='</div></div>'}
-  if(F.type==='all'){h+='<div class="card"><h3>Por evento</h3><div>';D.byType.forEach(x=>{h+=srow({title:esc(x.name),n:x.r.n,r:x.r,sub:[recStr(x.r),`${x.r.n} partida${x.r.n>1?'s':''}`]})});h+='</div></div>'}
+  if(F.type==='all'){h+='<div class="card"><h3>Por tipo de evento</h3><div>';D.byType.forEach(x=>{h+=srow({title:esc(x.name),n:x.r.n,r:x.r,sub:[recStr(x.r),`${x.r.n} partida${x.r.n>1?'s':''}`]})});h+='</div></div>'}
   h+=`<div class="card"><h3>Placar</h3><div class="grid2"><div><b class="money" style="font-size:1.5rem">${dec1(D.avgOppWin)}</b><p class="small muted">lore médio do oponente quando você vence</p></div><div><b class="money" style="font-size:1.5rem">${dec1(D.avgMeLoss)}</b><p class="small muted">seu lore médio quando perde</p></div></div><p class="small muted">Perto de ${LORE_GOAL} = jogos apertados. Conta os jogos com placar.</p></div>`;
   if(F.type!=='casual')h+=`<div class="card"><h3>Eventos e dinheiro</h3>
    <div class="tiles"><div class="tile"><b>${D.evs.length}</b><span>eventos</span></div><div class="tile"><b>${D.avgPlace==null?'–':dec1(D.avgPlace)+'º'}</b><span>colocação média</span></div><div class="tile"><b>${D.tops}</b><span>vezes no top 8</span></div></div>
@@ -1000,7 +1009,7 @@ function toCSV(rows){return'﻿'+rows.map(r=>r.map(csvCell).join(';')).join('\r\
 function csvFor(kind){
   const D=statsData();
   if(kind==='partidas'){
-    const rows=[['Data','Evento','Nome do evento','Formato do deck','Rodada','Formato','Meu deck','Cores do oponente','Apelido do oponente','Jogador oponente','Resultado','Jogos vencidos','Jogos perdidos','Placar dos jogos','Quem começou','Registro','Etiquetas','Notas']];
+    const rows=[['Data','Tipo do evento','Nome do evento','Formato','Rodada','Formato das partidas','Meu deck','Cores do oponente','Apelido do oponente','Jogador oponente','Resultado','Jogos vencidos','Jogos perdidos','Placar dos jogos','Quem começou','Registro','Etiquetas','Notas']];
     D.ms.forEach(m=>{const ev=m.eventId?getDoc(m.eventId):null;const w=gameWins(m.games);
       rows.push([fmtDate(m.date),ev?ev.name:'Partida avulsa',ev?(ev.title||''):'',ev?modeLabel(ev):'',m.round||'',m.format==='md3'?'MD3':'MD1',deckName(m.deckId),inkNames(m.oppInks),m.oppName||'',m.oppPlayer||'',{win:'Vitória',loss:'Derrota',draw:'Empate'}[m.result]||'',w.me,w.opp,(m.games||[]).map(g=>g.how!=='manual'&&g.me!=null&&g.me!==''?`${g.me}-${g.opp}`:(g.winner==='me'?'V':g.winner==='opp'?'D':'E')).join(' / '),(m.games||[]).map(g=>g.first==='me'?'eu':g.first==='opp'?'oponente':'?').join(' / '),m.entry==='manual'?'Sem contador':'Contador',(m.tags||[]).join(', '),m.notes||''])});
     return rows;
@@ -1010,14 +1019,14 @@ function csvFor(kind){
     D.matchups.forEach(x=>rows.push([x.label,x.nick,x.r.n,x.r.w,x.r.l,x.r.d,pct(x.r.w,x.r.n)]));
     return rows;
   }
-  const rows=[['Data','Evento','Nome do evento','Local','Formato do deck','Coleção','Boosters','Curva (1-7+)','Hits','Partidas','Deck','Campanha','Colocação','Jogadores','Inscrição (R$)','Prêmios em dinheiro e crédito (R$)','Prêmios estimados (R$)','Saldo real (R$)','Prêmios']];
+  const rows=[['Data','Tipo do evento','Nome do evento','Local','Formato','Coleção','Boosters','Curva (1-7+)','Hits','Formato das partidas','Deck','Campanha','Colocação','Jogadores','Inscrição (R$)','Prêmios em dinheiro e crédito (R$)','Prêmios estimados (R$)','Saldo real (R$)','Prêmios']];
   D.evs.slice().reverse().forEach(e=>{const p=prizeTotals(e);rows.push([fmtDate(e.date),e.name,e.title||'',e.store||'',modeLabel(e),e.set||'',e.boosters||'',e.curve?e.curve.join(' / '):'',(e.hits||[]).map(x=>x.name+(rarLabel(x)?' ('+rarLabel(x)+')':'')+(x.value?': '+csvNum(x.value):'')).join(' | '),e.format==='md3'?'MD3':'MD1',deckName(e.deckId),recStr(record(eventMatches(e.id))),e.placement||'',e.players||'',csvNum(num(e.fee)),csvNum(p.real),csvNum(p.est),csvNum(p.real-num(e.fee)),(e.prizes||[]).map(z=>`${(PRIZE_TYPES.find(t=>t.id===z.type)||{}).name}${z.desc?' ('+z.desc+')':''}: ${csvNum(z.value)}`).join(' | ')])});
   return rows;
 }
 function summaryText(){
   const D=statsData(),F=D.F;const dk=F.deck!=='all'?getDoc(F.deck):null;
   const L=[];L.push('Side Quest · '+periodLabel(F));
-  const filt=[dk?'Deck: '+dk.name:'Todos os decks',F.type==='all'?'todos os eventos':F.type==='casual'?'partidas avulsas':((eventNames().find(o=>o.id===F.type)||{}).name||'')];if(F.mode&&F.mode!=='all')filt.push('só '+(MODES.find(m=>m.id===F.mode)||{}).name);L.push(filt.join(' · '));L.push('');
+  const filt=[dk?'Deck: '+dk.name:'Todos os decks',F.type==='all'?'todos os tipos':F.type==='casual'?'partidas avulsas':((eventNames().find(o=>o.id===F.type)||{}).name||'')];if(F.mode&&F.mode!=='all')filt.push('só '+(MODES.find(m=>m.id===F.mode)||{}).name);L.push(filt.join(' · '));L.push('');
   L.push(`Partidas: ${D.r.n} (${recStr(D.r)}) · ${pct(D.r.w,D.r.n)}% de vitórias`);
   if(D.games.length)L.push(`Jogos: ${D.games.length} · ${pct(D.gw,D.games.length)}% de vitórias`);
   if(D.fm.length||D.fo.length)L.push(`Começando: ${D.fm.length?pct(D.fmw,D.fm.length)+'%':'–'} · Respondendo: ${D.fo.length?pct(D.fow,D.fo.length)+'%':'–'}`);
@@ -1044,8 +1053,9 @@ function vDecks(){
 function backupJSON(){const o={};S.docs.forEach((d,id)=>o[id]=d);return JSON.stringify({app:'side-quest',version:2,exported:new Date().toISOString(),docs:o},null,1)}
 function backupName(){return`side-quest-backup-${today()}.json`}
 function backupDone(){lsSet(LS_BACKUP,{at:Date.now(),n:S.docs.size});S.ui.backupSheet=false;render()}
-/* Compartilhar (Drive, WhatsApp, e-mail): só aparece onde o navegador consegue mandar arquivos, como o Chrome no Android */
-function canShareFiles(){try{return STANDALONE&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]})}catch(e){return false}}
+/* Compartilhar (Drive, WhatsApp, e-mail): só aparece onde o navegador consegue mandar arquivos, como o Chrome no Android.
+   Vai como .txt porque o Chrome não deixa compartilhar .json; o conteúdo é o mesmo e o Importar aceita os dois. */
+function canShareFiles(){try{return STANDALONE&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.txt',{type:'text/plain'})]})}catch(e){return false}}
 function backupInfo(){const b=lsGet(LS_BACKUP,null);const dirty=lsGet(LS_DIRTY,0)||Math.max(0,...[...S.docs.values()].map(d=>d.created||0));return{b,days:b?Math.floor((Date.now()-b.at)/864e5):null,changed:S.docs.size>0&&(!b||dirty>b.at)}}
 function needsBackup(){return S.mode==='local'&&backupInfo().changed}
 function backupLine(){const i=backupInfo();if(!i.b)return`<p class="${i.changed?'warnline':'small muted'}">Você ainda não fez nenhum backup neste aparelho.</p>`;return`<p class="${i.changed?'warnline':'small muted'}">Último backup: ${i.days===0?'hoje':i.days===1?'ontem':'há '+i.days+' dias'}${i.changed?' · há alterações depois dele':' · tudo salvo'}</p>`}
@@ -1113,6 +1123,10 @@ function evFields(f){
   const lim=LIM_MODES.includes(f.mode);
   return{title:f.titleOn?(f.title||'').trim():'',mode:MODES.some(m=>m.id===f.mode)?f.mode:'core',set:lim?(f.set||'').trim():'',boosters:lim?(parseInt(f.boosters,10)||null):null,curve:lim&&f.curveOn?cleanCurve(f.curve):null,hits:lim?(f.hits||[]).filter(x=>(x.name||'').trim()).map(x=>({name:x.name.trim(),rarity:(x.rarity||'').trim(),foil:!!x.foil,value:num(x.value)||null})):[]};
 }
+/* Trocar entre Selado e os formatos com deck apaga dados: avisa antes de salvar */
+function modeLoss(ev,f){const was=isLim(ev),now=LIM_MODES.includes(f.mode);if(was===now)return null;
+  if(was){const it=[ev.set?'a coleção':'',ev.boosters?'os boosters':'',ev.curve?'a curva de tinta':'',(ev.hits||[]).length?'os hits':''].filter(Boolean);return it.length?`Ao salvar com outro formato, ${it.join(', ').replace(/, ([^,]*)$/,' e $1')} deste evento ${it.length>1?'serão apagados':'será apagado'}.`:null}
+  const n=eventMatches(ev.id).filter(m=>m.deckId).length;return n?`Ao salvar como ${(MODES.find(m=>m.id===f.mode)||{}).name}, ${n>1?'as '+n+' partidas':'a partida'} deste evento ${n>1?'deixam':'deixa'} de ficar ligada${n>1?'s':''} ao deck ${deckName(ev.deckId)}.`:null}
 function defaultName(f){return(MODES.find(m=>m.id===f.mode)||MODES[0]).name}
 function checkEventForm(){return true}
 function toggleIn(arr,v,max){arr=arr||[];if(arr.includes(v))return arr.filter(x=>x!==v);if(arr.length>=max)return arr;return arr.concat(v)}
@@ -1140,7 +1154,7 @@ const A={
   titleOff:()=>{S.form.titleOn=false;S.form.title='';render()},
   addHit:()=>{S.form.hits=(S.form.hits||[]).concat({name:'',rarity:'',value:''});render();const i=document.querySelector(`[data-f="hits.${S.form.hits.length-1}.name"]`);if(i)i.focus()},
   rmHit:d=>{S.form.hits.splice(parseInt(d.v,10),1);render()},
-  setF:d=>{setPath(S.form,d.f,d.v);if(d.f==='result')S.form.resultTouched=true;if(d.f==='mode'){S.ui.err=null;if(S.form._pn!=null&&S.form.name===S.form._pn&&d.v!==modeOf(events()[0])){S.form.name='';S.form._pn=null}if(S.form._pf!=null&&S.form.fee===S.form._pf){const lm=events().find(e=>modeOf(e)===d.v);S.form.fee=lm&&lm.fee?String(lm.fee).replace('.',','):'';S.form._pf=S.form.fee}}if(/^games\.\d+\.winner$/.test(d.f))S.form.resultTouched=false;render()},
+  setF:d=>{setPath(S.form,d.f,d.v);if(d.f==='result')S.form.resultTouched=true;if(d.f==='mode'){S.ui.err=null;S.ui.modeWarn=null;S.ui.modeOk=null;if(S.form._pn!=null&&S.form.name===S.form._pn&&d.v!==modeOf(events()[0])){S.form.name='';S.form._pn=null}if(S.form._pf!=null&&S.form.fee===S.form._pf){const lm=events().find(e=>modeOf(e)===d.v);S.form.fee=lm&&lm.fee?String(lm.fee).replace('.',','):'';S.form._pf=S.form.fee}}if(/^games\.\d+\.winner$/.test(d.f))S.form.resultTouched=false;render()},
   pickRarity:d=>{const h=S.form.hits[parseInt(d.i,10)];if(h){h.rarity=h.rarity===d.v?'':d.v;render()}},
   oppNew:()=>{const f=S.form;f.oppNew=true;if(f.oppName&&inksForName(f.oppName)){f.oppName='';f.oppInks=[]}render();const i=document.getElementById('m-oppname');if(i)i.focus()},
   oppCancel:()=>{const f=S.form;f.oppNew=false;f.oppName='';f.oppInks=[];render()},
@@ -1181,6 +1195,7 @@ const A={
     L.cur={me:0,opp:0,first:null,hist:[]};L.phase='first';saveLive();render()},
   timeEnd:()=>{S.ui.sheet=null;finishMatch()},
   askCancel:()=>{S.ui.confirmCancel=true;render()},
+  pickSugg:d=>{const i=document.querySelector(`input[data-f="${d.f}"]`);if(!i)return;i.value=d.v;i.dispatchEvent(new Event('input',{bubbles:true}));if(document.body.contains(i))i.dispatchEvent(new Event('change',{bubbles:true}))},
   askDiscard:()=>{S.ui.confirmDiscard=true;render()},
   keepLive:()=>{S.ui.confirmDiscard=false;render()},
   resumeLive:()=>{const L=S.live;if(!L)return;S.ui={};if(L.phase==='result'){if(!(S.form&&S.form._live===L))S.form=resultForm(L);go('result')}else go('counter')},
@@ -1196,8 +1211,11 @@ const A={
   delEvent:()=>{const ev=getDoc(S.sel);if(!ev)return;eventMatches(ev.id).forEach(m=>remove(m.id));remove(ev.id);if(S.live&&S.live.eventId===ev.id){S.live=null;lsSet(LS_LIVE,null)}S.ui={};toast('Evento excluído');go('history')},
   addMatchToEvent:()=>{const ev=getDoc(S.sel);if(!ev)return;startQuick({eventId:ev.id,round:eventMatches(ev.id).length+1,deckId:ev.deckId,format:ev.format,back:'event'})},
   editEventInfo:()=>{const ev=getDoc(S.sel);if(!ev)return;S.ui={};S.form=Object.assign({name:ev.name||'',store:ev.store||'',format:ev.format||'md1',rounds:ev.rounds?String(ev.rounds):'',fee:ev.fee?String(ev.fee).replace('.',','):'',date:ev.date||today(),deckId:ev.deckId||(activeDecks()[0]||{}).id||null},evFormOf(ev));go('eventEdit')},
+  modeConfirm:()=>{S.ui.modeOk=true;A.saveEventInfo()},
+  modeKeep:()=>{const ev=getDoc(S.sel);if(ev)S.form.mode=modeOf(ev);S.ui.modeWarn=null;render()},
   editEventFrom:d=>{S.sel=d.v;A.editEventInfo()},
   saveEventInfo:()=>{const ev=getDoc(S.sel),f=S.form;if(!ev)return;const lim=LIM_MODES.includes(f.mode);if(!checkEventForm())return;
+    const loss=modeLoss(ev,f);if(loss&&!S.ui.modeOk){S.ui.modeWarn=loss;render();const c=document.getElementById('mode-warn');if(c)c.scrollIntoView({block:'center'});return}
     if(!lim)oppToDeck(f,'deckId');
     if(!lim&&!(f.deckId&&getDoc(f.deckId))){S.ui.err='Escolha o deck usado.';render();return}
     const upd=Object.assign({},ev,{name:(f.name||'').trim()||defaultName(f),store:(f.store||'').trim(),format:f.format,rounds:parseInt(f.rounds)||null,fee:num(f.fee),date:f.date||ev.date,deckId:lim?null:f.deckId},evFields(f));
@@ -1234,9 +1252,9 @@ const A={
   exportSel:()=>{const v=(document.getElementById('exp-kind')||{}).value||'partidas';if(v==='resumo')A.copySummary();else A.exportCsv({v})},
   copySummary:async()=>{const t=summaryText();if(!(await copyText(t,'Resumo copiado'))){S.ui.exportText=t;S.ui.exportLabel='Resumo';render()}},
   export:async()=>{if(await offerFile(backupName(),backupJSON(),'Copie e guarde este texto'))backupDone()},
-  shareBackup:async()=>{let f;try{f=new File([backupJSON()],backupName(),{type:'application/json'})}catch(e){return A.export()}
+  shareBackup:async()=>{let f;try{f=new File([backupJSON()],backupName().replace(/\.json$/,'.txt'),{type:'text/plain'})}catch(e){return A.export()}
     if(!(navigator.canShare&&navigator.canShare({files:[f]})))return A.export();
-    try{await navigator.share({files:[f],title:'Backup do Side Quest'});backupDone();toast('Backup enviado')}catch(e){if(!e||e.name!=='AbortError')A.export()}},
+    try{await navigator.share({files:[f],title:'Backup do Side Quest'});backupDone();toast('Backup enviado')}catch(e){if(!e||e.name!=='AbortError'){toast('Não deu para compartilhar, então o backup foi baixado');A.export()}}},
   copyExport:async()=>{const t=document.getElementById('exp-text');if(!(await copyText(S.ui.exportText))&&t){t.focus();t.select()}},
   import:()=>document.getElementById('importFile').click(),
   confirmImport:()=>{const imp=S.ui.importData;if(!imp)return;[...S.docs.keys()].forEach(id=>{if(!imp.docs[id])remove(id)});Object.entries(imp.docs).forEach(([id,d])=>write(id,d));lsSet(LS_BACKUP,{at:Date.now()+1,n:imp.n});S.ui={};toast(imp.n+' registros restaurados');render()}
@@ -1251,6 +1269,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
 document.addEventListener('submit',e=>{const f=e.target.closest('form[data-act-submit]');if(!f)return;e.preventDefault();const fn=A[f.dataset.actSubmit];if(fn)fn({})});
 function onField(e){const el=e.target;
   if(el.dataset.f){const v=el.type==='checkbox'?el.checked:el.value;setPath(S.form,el.dataset.f,v);
+    if(e.type==='input'){const sg=document.getElementById('sg-'+el.dataset.f);if(sg)sg.innerHTML=suggChips(el.dataset.f)}
     if(el.dataset.f==='list'){const c=document.getElementById('dl-check');if(c)c.innerHTML=listCheck(parseList(v))}
     if(/^curve\.\d+$/.test(el.dataset.f)){const c=document.getElementById('curve-prev');if(c)c.innerHTML=curvePrevHTML(cleanCurve(S.form.curve))}
     if(el.dataset.f==='oppName'&&(e.type==='change'||e.inputType==='insertReplacementText'||(e.type==='input'&&!e.inputType))){const hit=inksForName(v);if(hit){const ch=inkKey(hit.inks)!==inkKey(S.form.oppInks);S.form.oppName=hit.name;S.form.oppInks=[...hit.inks];if(ch){render();toast('Cores de '+hit.name+' preenchidas')}}}}
