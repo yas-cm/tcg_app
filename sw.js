@@ -17,7 +17,7 @@ self.addEventListener('fetch',e=>{
   }
   // O app: tenta a versão nova na internet; sem internet, usa a guardada
   if(req.mode==='navigate'||url.pathname.endsWith('/index.html')){
-    e.respondWith(fetch(req).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return res}).catch(()=>caches.match('./index.html')));return;
+    e.respondWith(fetch(req).then(res=>{if(!res.ok)return caches.match('./index.html').then(hit=>hit||res);const copy=res.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return res}).catch(()=>caches.match('./index.html')));return;
   }
-  e.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy));return res})));
+  e.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy))}return res})));
 });

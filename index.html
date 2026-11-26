@@ -450,7 +450,9 @@ function startLive(o){S.live={eventId:o.eventId||null,round:o.round||null,deckId
 const gameWins=games=>{let me=0,opp=0;(games||[]).forEach(g=>{if(g.winner==='me')me++;else if(g.winner==='opp')opp++});return{me,opp}};
 function resultOf(games){const w=gameWins(games);return w.me>w.opp?'win':w.opp>w.me?'loss':'draw'}
 /* Formulário da tela de resultado, ligado à partida (para não perder o que já foi marcado ao voltar para ela) */
-function resultForm(L){const f={result:resultOf(L.games),oppInks:[],oppName:'',tags:[],notes:''};Object.defineProperty(f,'_live',{value:L});return f}
+function resultForm(L){const d=L.draft||{};const f={result:resultOf(L.games),oppInks:[...(d.oppInks||[])],oppName:d.oppName||'',oppPlayer:d.oppPlayer||'',oppNew:!!d.oppNew,tags:[...(d.tags||[])],notes:d.notes||'',newTag:d.newTag||''};Object.defineProperty(f,'_live',{value:L});return f}
+/* Guarda no celular o que já foi marcado na tela de resultado, para não perder se o app fechar antes de salvar */
+function saveDraft(touch){const L=S.live,f=S.form;if(S.view!=='result'||!L||!f||f._live!==L)return;L.draft={oppInks:f.oppInks||[],oppName:f.oppName||'',oppPlayer:f.oppPlayer||'',oppNew:!!f.oppNew,tags:f.tags||[],notes:f.notes||'',newTag:f.newTag||''};if(touch)saveLive();else lsSet(LS_LIVE,L)}
 function finishMatch(){const L=S.live;L.phase='result';saveLive();S.form=resultForm(L);go('result')}
 function startQuick(o,games){
   S.quick={eventId:o.eventId||null,round:o.round||null,deckId:o.deckId,format:o.format||'md1',back:o.back||'home'};
@@ -500,7 +502,7 @@ function tabsHTML(){
 }
 
 /* ---------- views ---------- */
-const NEWS=[['Sugestões em botões','Tipo do evento, local, deck e nome do oponente agora mostram sugestões em botões, que funcionam no Android.'],['Backup em .txt','O backup compartilhado vai como .txt para o Drive e o WhatsApp aceitarem. O Importar aceita .txt e .json.'],['Compartilhar backup','Em Ajustes, mande o backup direto para o Drive, WhatsApp ou e-mail, sem criar um arquivo novo no celular a cada vez.'],['Partida esquecida','Se uma partida ficou aberta há mais de 6 horas, o app abre no início, com a opção de voltar a ela ou descartar.'],['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
+const NEWS=[['Resultado guardado','Se o app fechar na tela de resultado, o deck do oponente, as etiquetas e as notas que você já marcou continuam lá ao voltar.'],['Sugestões em botões','Tipo do evento, local, deck e nome do oponente agora mostram sugestões em botões, que funcionam no Android.'],['Backup em .txt','O backup compartilhado vai como .txt para o Drive e o WhatsApp aceitarem. O Importar aceita .txt e .json.'],['Compartilhar backup','Em Ajustes, mande o backup direto para o Drive, WhatsApp ou e-mail, sem criar um arquivo novo no celular a cada vez.'],['Partida esquecida','Se uma partida ficou aberta há mais de 6 horas, o app abre no início, com a opção de voltar a ela ou descartar.'],['Novos formatos','Agora dá para registrar eventos de Infinity e Coconut, além de Core.'],['Modo Selado','Registre drafts, pré-releases e pack rush, sem precisar de decklist. Anote as coleções, quantos boosters abriu e a curva do seu deck.'],['Hits','Guarde as cartas boas que vieram nos boosters, com raridade e foil.'],['Nome do evento','Dê um nome para cada evento, como "Draft da Mulan", e encontre fácil no histórico.']];
 function newsDue(){const seen=lsGet(LS_SEEN,null);if(seen===APP_VERSION)return false;if(!seen&&!S.docs.size){lsSet(LS_SEEN,APP_VERSION);return false}return true}
 function newsOverlay(){return`<div class="overlay news-ov" role="dialog" aria-modal="true" aria-label="Novidades"><div class="newsbox"><span class="eyebrow">Side Quest ${APP_VERSION}</span><h2>Novidades</h2><ul class="news-l">${NEWS.map(n=>`<li><b>${n[0]}</b><span>${n[1]}</span></li>`).join('')}</ul><button class="btn gold big" data-act="newsSeen">Entendi</button></div></div>`}
 function vHome(){
@@ -1104,7 +1106,7 @@ function vDeckEdit(){
    <button class="btn gold big" data-act="saveDeck">Salvar deck</button></main>`;
 }
 
-function render(){
+function render(){saveDraft();
   const root=document.getElementById('root');
   const map={home:vHome,newEvent:vNewEvent,newCasual:vNewCasual,counter:vCounter,result:vResult,quick:vQuick,closeEvent:vCloseEvent,eventEdit:vEventEdit,history:vHistory,event:vEvent,match:vMatch,stats:vStats,decks:vDecks,deck:vDeck,deckEdit:vDeckEdit,settings:vSettings,matchup:vMatchup};
   const html=(map[S.view]||vHome)();
@@ -1267,7 +1269,7 @@ document.addEventListener('pointermove',evoMove);document.addEventListener('poin
 document.addEventListener('pointerout',e=>{const box=e.target.closest&&e.target.closest('.evo');if(box&&!box.contains(e.relatedTarget))evoLeave(e)});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||t.tagName==='FORM')return;if(t.disabled)return;e.preventDefault();const fn=A[t.dataset.act];if(fn)fn(t.dataset,t)});
 document.addEventListener('submit',e=>{const f=e.target.closest('form[data-act-submit]');if(!f)return;e.preventDefault();const fn=A[f.dataset.actSubmit];if(fn)fn({})});
-function onField(e){const el=e.target;
+function onField(e){const el=e.target;if(el.dataset.f)setTimeout(()=>saveDraft(true),0);
   if(el.dataset.f){const v=el.type==='checkbox'?el.checked:el.value;setPath(S.form,el.dataset.f,v);
     if(e.type==='input'){const sg=document.getElementById('sg-'+el.dataset.f);if(sg)sg.innerHTML=suggChips(el.dataset.f)}
     if(el.dataset.f==='list'){const c=document.getElementById('dl-check');if(c)c.innerHTML=listCheck(parseList(v))}
